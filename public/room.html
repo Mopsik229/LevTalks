@@ -504,19 +504,34 @@
                 });
             }
             
-            async handleUsersInRoom(users) {
+async handleUsersInRoom(users) {
+                // Этот обработчик вызывается только для нового пользователя.
+                // Он получает список уже существующих пользователей.
+                // Новый пользователь должен инициировать соединения с ними.
                 for (const user of users) {
-                    if (user.id !== this.socket.id) {
-                        await this.createPeerConnection(user.id, user.username, true);
+                    if (user.id !== this.socket.id) { // Не создаем соединение с самим собой
+                        // Проверяем, существует ли уже соединение (например, если user-joined пришло быстрее)
+                        if (!this.peers.has(user.id)) {
+                             await this.createPeerConnection(user.id, user.username, true); // isInitiator = true
+                        }
                     }
                 }
             }
             
             async handleUserJoined(user) {
-                await this.createPeerConnection(user.id, user.username, false);
+                 // Этот обработчик вызывается у уже существующих пользователей,
+                 // когда к комнате присоединяется новый пользователь.
+                 // Существующие пользователи должны инициировать соединение с новым.
+                 if (user.id !== this.socket.id) { // На всякий случай проверяем
+                     // Проверяем, существует ли уже соединение
+                     if (!this.peers.has(user.id)) {
+                         await this.createPeerConnection(user.id, user.username, false); // isInitiator = false
+                     }
+                 }
             }
             
             handleUserLeft(userId) {
+                console.log(`Пользователь ${userId} покинул комнату`);
                 if (this.peers.has(userId)) {
                     this.peers.get(userId).close();
                     this.peers.delete(userId);
@@ -551,6 +566,22 @@
             }
             
             async createPeerConnection(userId, username, isInitiator) {
+                // Проверка, если соединение уже существует, чтобы избежать дубликатов
+                if (this.peers.has(userId)) {
+                    console.warn(`PeerConnection с пользователем ${userId} уже существует.`);
+                    return; // Или можно закрыть старое и создать новое, зависит от логики
+                    // this.peers.get(userId).close();
+                    // this.peers.delete(userId);
+                }
+
+                console.log(`Создание PeerConnection с ${userId}. Инициатор: ${isInitiator}`);
+
+                    if (this.localStream) {
+                    this.localStream.getTracks().forEach(track => {
+                        peerConnection.addTrack(track, this.localStream);
+                    });
+                }
+
                 const peerConnection = new RTCPeerConnection(this.iceConfiguration);
                 this.peers.set(userId, peerConnection);
                 
@@ -563,8 +594,18 @@
                 
                 // Обработка входящих потоков
                 peerConnection.ontrack = (event) => {
+                    console.log(`Получен медиапоток от ${userId}`);
                     const remoteStream = event.streams[0];
-                    this.addVideoToGrid(userId, remoteStream, username, false, false);
+                    // Убедимся, что видео-элемент для этого пользователя еще не создан
+                    if (!document.getElementById(`video-${userId}`)) {
+                         this.addVideoToGrid(userId, remoteStream, username, false, false);
+                    } else {
+                         // Если элемент уже есть, обновляем srcObject
+                         const videoElement = document.querySelector(`#video-${userId} .video-element`);
+                         if (videoElement && videoElement.srcObject !== remoteStream) {
+                              videoElement.srcObject = remoteStream;
+                         }
+                    }
                 };
                 
                 // Обработка ICE кандидатов
@@ -576,16 +617,32 @@
                         });
                     }
                 };
+
+                    peerConnection.onconnectionstatechange = () => {
+                    console.log(`Состояние соединения с ${userId}: ${peerConnection.connectionState}`);
+                    if (peerConnection.connectionState === 'disconnected' || peerConnection.connectionState === 'failed') {
+                        // Можно добавить логику повторного подключения или уведомления
+                        console.warn(`Соединение с пользователем ${userId} потеряно (${peerConnection.connectionState})`);
+                        // this.handleUserLeft(userId); // Или другая логика
+                    }
+                };
                 
                 // Если мы инициаторы, создаем оффер
                 if (isInitiator) {
-                    const offer = await peerConnection.createOffer();
-                    await peerConnection.setLocalDescription(offer);
-                    
-                    this.socket.emit('offer', {
-                        target: userId,
-                        offer: offer
-                    });
+                    try {
+                        console.log(`Создание Offer для ${userId}`);
+                        const offer = await peerConnection.createOffer();
+                        await peerConnection.setLocalDescription(offer);
+                        this.socket.emit('offer', {
+                            target: userId,
+                            offer: offer
+                        });
+                    } catch (error) {
+                        console.error(`Ошибка при создании Offer для ${userId}:`, error);
+                        // Обработка ошибки, возможно, закрытие соединения
+                        peerConnection.close();
+                        this.peers.delete(userId);
+                    }
                 }
             }
             
