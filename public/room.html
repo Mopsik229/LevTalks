@@ -330,7 +330,6 @@
             </div>
             
             <div class="video-grid" id="videoGrid">
-                <!-- Видео будут добавляться динамически -->
             </div>
             
             <div class="controls">
@@ -394,7 +393,6 @@
                 this.videoEnabled = false;
                 this.audioEnabled = false;
                 
-                // WebRTC конфигурация
                 this.iceConfiguration = {
                     iceServers: [
                         { urls: 'stun:stun.l.google.com:19302' },
@@ -416,13 +414,11 @@
             }
             
             setupEventListeners() {
-                // Управление медиа
                 document.getElementById('toggleVideo').addEventListener('click', () => this.toggleVideo());
                 document.getElementById('toggleAudio').addEventListener('click', () => this.toggleAudio());
                 document.getElementById('showSettings').addEventListener('click', () => this.showSettings());
                 document.getElementById('leaveRoom').addEventListener('click', () => this.leaveRoom());
                 
-                // Чат
                 document.getElementById('toggleChat').addEventListener('click', () => this.toggleChat());
                 document.getElementById('closeChat').addEventListener('click', () => this.toggleChat());
                 document.getElementById('sendMessage').addEventListener('click', () => this.sendMessage());
@@ -430,14 +426,11 @@
                     if (e.key === 'Enter') this.sendMessage();
                 });
                 
-                // Копирование ссылки
                 document.getElementById('copyRoomLink').addEventListener('click', () => this.copyRoomLink());
                 
-                // Смена устройств
                 document.getElementById('videoDevices').addEventListener('change', (e) => this.changeVideoDevice(e.target.value));
                 document.getElementById('audioDevices').addEventListener('change', (e) => this.changeAudioDevice(e.target.value));
                 
-                // Socket события
                 this.socket.on('users-in-room', (users) => this.handleUsersInRoom(users));
                 this.socket.on('user-joined', (user) => this.handleUserJoined(user));
                 this.socket.on('user-left', (userId) => this.handleUserLeft(userId));
@@ -485,7 +478,6 @@
                         audio: true
                     });
                     
-                    // Изначально отключаем видео и аудио
                     this.localStream.getVideoTracks().forEach(track => track.enabled = false);
                     this.localStream.getAudioTracks().forEach(track => track.enabled = false);
                     
@@ -507,21 +499,21 @@
             async handleUsersInRoom(users) {
                 for (const user of users) {
                     if (user.id !== this.socket.id) {
-                        await this.createPeerConnection(user.id, user.username, true);
+
+                        if (!this.peers.has(user.id)) {
+                             await this.createPeerConnection(user.id, user.username, true); isInitiator = true
+                        }
                     }
                 }
             }
-            
+
             async handleUserJoined(user) {
-                await this.createPeerConnection(user.id, user.username, false);
-            }
-            
-            handleUserLeft(userId) {
-                if (this.peers.has(userId)) {
-                    this.peers.get(userId).close();
-                    this.peers.delete(userId);
-                }
-                this.removeVideoFromGrid(userId);
+                 if (user.id !== this.socket.id) {
+
+                     if (!this.peers.has(user.id)) {
+                         await this.createPeerConnection(user.id, user.username, false); isInitiator = false
+                     }
+                 }
             }
             
             handleUserVideoToggle(data) {
@@ -550,24 +542,37 @@
                 }
             }
             
-            async createPeerConnection(userId, username, isInitiator) {
+async createPeerConnection(userId, username, isInitiator) {
+                if (this.peers.has(userId)) {
+                    console.warn(`PeerConnection с пользователем ${userId} уже существует.`);
+                    return;
+                    this.peers.get(userId).close();
+                }
+
+                console.log(`Создание PeerConnection с ${userId}. Инициатор: ${isInitiator}`);
+
                 const peerConnection = new RTCPeerConnection(this.iceConfiguration);
                 this.peers.set(userId, peerConnection);
-                
-                // Добавляем локальный поток
+
                 if (this.localStream) {
                     this.localStream.getTracks().forEach(track => {
                         peerConnection.addTrack(track, this.localStream);
                     });
                 }
-                
-                // Обработка входящих потоков
+
                 peerConnection.ontrack = (event) => {
+                    console.log(`Получен медиапоток от ${userId}`);
                     const remoteStream = event.streams[0];
-                    this.addVideoToGrid(userId, remoteStream, username, false, false);
+                    if (!document.getElementById(`video-${userId}`)) {
+                         this.addVideoToGrid(userId, remoteStream, username, false, false);
+                    } else {
+                         const videoElement = document.querySelector(`#video-${userId} .video-element`);
+                         if (videoElement && videoElement.srcObject !== remoteStream) {
+                              videoElement.srcObject = remoteStream;
+                         }
+                    }
                 };
-                
-                // Обработка ICE кандидатов
+
                 peerConnection.onicecandidate = (event) => {
                     if (event.candidate) {
                         this.socket.emit('ice-candidate', {
@@ -576,16 +581,41 @@
                         });
                     }
                 };
+
+                peerConnection.onconnectionstatechange = () => {
+                    console.log(`Состояние соединения с ${userId}: ${peerConnection.connectionState}`);
+                    if (peerConnection.connectionState === 'disconnected' || peerConnection.connectionState === 'failed') {
+                        console.warn(`Соединение с пользователем ${userId} потеряно (${peerConnection.connectionState})`);
+                        this.handleUserLeft(userId);
+                        
+                    }
+                };
+
+                handleUserLeft(userId) 
+                console.log(`Пользователь ${userId} покинул комнату`);
+                if (this.peers.has(userId)) {
+                    this.peers.get(userId).close();
+                    this.peers.delete(userId);
+                }
+                this.removeVideoFromGrid(userId);
+            
+
                 
-                // Если мы инициаторы, создаем оффер
+
                 if (isInitiator) {
-                    const offer = await peerConnection.createOffer();
-                    await peerConnection.setLocalDescription(offer);
-                    
-                    this.socket.emit('offer', {
-                        target: userId,
-                        offer: offer
-                    });
+                    try {
+                        console.log(`Создание Offer для ${userId}`);
+                        const offer = await peerConnection.createOffer();
+                        await peerConnection.setLocalDescription(offer);
+                        this.socket.emit('offer', {
+                            target: userId,
+                            offer: offer
+                        });
+                    } catch (error) {
+                        console.error(`Ошибка при создании Offer для ${userId}:`, error);
+                        peerConnection.close();
+                        this.peers.delete(userId);
+                    }
                 }
             }
             
@@ -630,7 +660,7 @@
                 video.srcObject = stream;
                 video.autoplay = true;
                 video.playsInline = true;
-                video.muted = userId === 'local'; // Отключаем звук для локального видео
+                video.muted = userId === 'local';
                 video.style.display = videoEnabled ? 'block' : 'none';
                 
                 const placeholder = document.createElement('div');
@@ -671,7 +701,6 @@
                 const btn = document.getElementById('toggleVideo');
                 btn.classList.toggle('disabled', !this.videoEnabled);
                 
-                // Обновляем локальное видео
                 const localVideo = document.getElementById('video-local');
                 if (localVideo) {
                     const placeholder = localVideo.querySelector('.video-placeholder');
@@ -701,7 +730,6 @@
                 const btn = document.getElementById('toggleAudio');
                 btn.classList.toggle('disabled', !this.audioEnabled);
                 
-                // Обновляем индикатор звука
                 const localVideo = document.getElementById('video-local');
                 if (localVideo) {
                     const audioIndicator = localVideo.querySelector('.audio-indicator');
@@ -725,7 +753,6 @@
                         audio: this.localStream ? { deviceId: this.localStream.getAudioTracks()[0]?.getSettings()?.deviceId } : true
                     });
                     
-                    // Заменяем видео трек
                     const videoTrack = newStream.getVideoTracks()[0];
                     const oldVideoTrack = this.localStream.getVideoTracks()[0];
                     
@@ -737,7 +764,6 @@
                     this.localStream.addTrack(videoTrack);
                     videoTrack.enabled = this.videoEnabled;
                     
-                    // Обновляем peer connections
                     this.peers.forEach(pc => {
                         const sender = pc.getSenders().find(s => s.track && s.track.kind === 'video');
                         if (sender) {
@@ -745,7 +771,6 @@
                         }
                     });
                     
-                    // Обновляем локальное видео
                     const localVideo = document.querySelector('#video-local .video-element');
                     if (localVideo) {
                         localVideo.srcObject = this.localStream;
@@ -765,7 +790,6 @@
                         audio: { deviceId: { exact: deviceId } }
                     });
                     
-                    // Заменяем аудио трек
                     const audioTrack = newStream.getAudioTracks()[0];
                     const oldAudioTrack = this.localStream.getAudioTracks()[0];
                     
@@ -777,7 +801,6 @@
                     this.localStream.addTrack(audioTrack);
                     audioTrack.enabled = this.audioEnabled;
                     
-                    // Обновляем peer connections
                     this.peers.forEach(pc => {
                         const sender = pc.getSenders().find(s => s.track && s.track.kind === 'audio');
                         if (sender) {
@@ -792,19 +815,15 @@
             
             leaveRoom() {
                 if (confirm('Вы действительно хотите покинуть комнату?')) {
-                    // Останавливаем локальный поток
                     if (this.localStream) {
                         this.localStream.getTracks().forEach(track => track.stop());
                     }
-                    
-                    // Закрываем все peer connections
+
                     this.peers.forEach(pc => pc.close());
                     this.peers.clear();
-                    
-                    // Отключаемся от сокета
+
                     this.socket.disconnect();
                     
-                    // Переходим на главную страницу
                     window.location.href = '/';
                 }
             }
@@ -876,16 +895,13 @@
             }
         }
         
-        // Функция для скрытия настроек
         function hideSettings() {
             document.getElementById('deviceSelector').style.display = 'none';
         }
         
-        // Запуск приложения
         let app;
         
         window.addEventListener('load', () => {
-            // Проверяем, есть ли имя пользователя
             if (!localStorage.getItem('username')) {
                 alert('Пожалуйста, вернитесь на главную страницу и введите ваше имя');
                 window.location.href = '/';
@@ -895,7 +911,6 @@
             app = new VideoCallApp();
         });
         
-        // Обработка закрытия страницы
         window.addEventListener('beforeunload', () => {
             if (app && app.localStream) {
                 app.localStream.getTracks().forEach(track => track.stop());
