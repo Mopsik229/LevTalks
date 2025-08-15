@@ -10,98 +10,129 @@
             padding: 0;
             box-sizing: border-box;
         }
-
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-color: #353839; /* Основной цвет фона */
+            color: #353839; /* Цвет текста по умолчанию */
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
+            padding: 20px;
         }
-
         .container {
-            background: white;
-            border-radius: 20px;
+            background: #f5f5f5; /* Светлый фон для контента */
+            border-radius: 24px;
             padding: 40px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            max-width: 400px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
             width: 100%;
             margin: 20px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid #ddd;
         }
-
+        /* Акцентная полоса вверху */
+        .container::before {
+             content: '';
+             position: absolute;
+             top: 0;
+             left: 0;
+             right: 0;
+             height: 8px;
+             background: linear-gradient(90deg, #FFE4B5, #d4b98a); /* Акцентный цвет в градиенте */
+        }
+        .logo-area {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .logo {
+            font-size: 48px;
+            color: #353839; /* Цвет логотипа */
+        }
         h1 {
             text-align: center;
-            color: #333;
-            margin-bottom: 30px;
+            color: #353839;
+            margin-bottom: 10px;
             font-size: 28px;
+            font-weight: 700;
         }
-
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
         .input-group {
-            margin-bottom: 20px;
+            margin-bottom: 25px;
         }
-
         label {
             display: block;
             margin-bottom: 8px;
-            color: #555;
-            font-weight: 500;
+            color: #444;
+            font-weight: 600;
+            font-size: 15px;
         }
-
         input[type="text"] {
             width: 100%;
-            padding: 12px 16px;
-            border: 2px solid #e1e5e9;
-            border-radius: 8px;
+            padding: 14px 18px;
+            border: 2px solid #ccc;
+            border-radius: 12px;
             font-size: 16px;
-            transition: border-color 0.3s;
+            transition: all 0.3s ease;
+            background-color: #fff;
         }
-
         input[type="text"]:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #FFE4B5; /* Акцент на фокусе */
+            box-shadow: 0 0 0 3px rgba(255, 228, 181, 0.3);
         }
-
         .btn {
             width: 100%;
-            padding: 14px;
+            padding: 15px;
             border: none;
-            border-radius: 8px;
-            font-size: 16px;
+            border-radius: 12px;
+            font-size: 17px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s;
-            margin-bottom: 15px;
+            transition: all 0.3s ease;
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px; /* Пространство между иконкой и текстом */
         }
-
         .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: #353839; /* Основной цвет кнопки */
+            color: #FFE4B5; /* Акцентный цвет текста */
+            box-shadow: 0 4px 10px rgba(53, 56, 57, 0.2);
         }
-
         .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+            background: #2a2d2e; /* Немного темнее при наведении */
+            transform: translateY(-3px);
+            box-shadow: 0 7px 15px rgba(53, 56, 57, 0.3);
         }
-
+        .btn-primary:active {
+             transform: translateY(0);
+        }
         .btn-secondary {
-            background: #f8f9fa;
-            color: #333;
-            border: 2px solid #e1e5e9;
+            background: #e0e0e0; /* Светлый фон */
+            color: #353839;
+            border: 2px solid #ccc;
         }
-
         .btn-secondary:hover {
-            background: #e9ecef;
-            border-color: #adb5bd;
+            background: #d5d5d5;
+            border-color: #aaa;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 12px rgba(0, 0, 0, 0.1);
         }
-
         .divider {
             text-align: center;
-            margin: 25px 0;
+            margin: 30px 0;
             position: relative;
             color: #888;
+            font-weight: 500;
         }
-
         .divider::before {
             content: '';
             position: absolute;
@@ -109,84 +140,85 @@
             left: 0;
             right: 0;
             height: 1px;
-            background: #e1e5e9;
+            background: #ccc;
             z-index: 1;
         }
-
         .divider span {
-            background: white;
-            padding: 0 15px;
+            background: #f5f5f5;
+            padding: 0 20px;
             position: relative;
             z-index: 2;
+            font-size: 15px;
         }
-
         .room-id-input {
             display: flex;
-            gap: 10px;
+            gap: 12px;
         }
-
         .room-id-input input {
             flex: 1;
         }
-
         .room-id-input button {
-            padding: 12px 20px;
+            padding: 14px 22px;
             white-space: nowrap;
+            border-radius: 12px;
         }
-
         .error {
-            color: #dc3545;
+            color: #b32424;
             font-size: 14px;
-            margin-top: 10px;
-            padding: 10px;
-            background: #f8d7da;
-            border: 1px solid #f5c6cb;
-            border-radius: 4px;
+            margin-top: 15px;
+            padding: 12px 15px;
+            background: #ffe6e6;
+            border: 1px solid #ffcccc;
+            border-radius: 8px;
             display: none;
+            text-align: center;
+            font-weight: 500;
         }
-
         @media (max-width: 480px) {
             .container {
                 margin: 10px;
-                padding: 20px;
+                padding: 30px 20px;
             }
-            
             h1 {
                 font-size: 24px;
+            }
+            .subtitle {
+                font-size: 14px;
+            }
+            .btn {
+                padding: 14px;
+                font-size: 16px;
+            }
+            .room-id-input {
+                flex-direction: column;
+                gap: 10px;
+            }
+            .room-id-input button {
+                width: 100%;
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🎥 Видеозвонки</h1>
+        <!-- Логотип в верхней части -->
+        <div class="logo-area">
+                    <h1>LevTalking</h1>
+            <div class="logo"><img src="assets/435519ca-586f-4205-80ce-da05913bca03.png" style="width: 200px; height: 200px;"></div>
+        </div>
+
+        <h1>Видеозвонки</h1>
+        <p class="subtitle">Создавайте комнаты и общайтесь лицом к лицу</p>
         
         <div class="input-group">
             <label for="username">Ваше имя:</label>
             <input type="text" id="username" placeholder="Введите ваше имя" maxlength="20">
         </div>
-
         <button class="btn btn-primary" id="createRoom">
-            Создать новую комнату
+            <span>+</span> Создать новую комнату
         </button>
-
-        <div class="divider">
-            <span>или</span>
-        </div>
-
-        <div class="input-group">
-            <label for="roomId">ID комнаты для подключения:</label>
-            <div class="room-id-input">
-                <input type="text" id="roomId" placeholder="Вставьте ID комнаты">
-                <button class="btn btn-secondary" id="joinRoom">
-                    Войти
-                </button>
-            </div>
-        </div>
-
         <div class="error" id="error"></div>
     </div>
-
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
@@ -195,12 +227,10 @@
         const roomIdInput = document.getElementById('roomId');
         const joinRoomBtn = document.getElementById('joinRoom');
         const errorDiv = document.getElementById('error');
-
         // Генерируем случайное имя пользователя
         const randomNames = ['Пользователь', 'Гость', 'Участник'];
         const randomName = randomNames[Math.floor(Math.random() * randomNames.length)] + Math.floor(Math.random() * 1000);
         usernameInput.value = randomName;
-
         function showError(message) {
             errorDiv.textContent = message;
             errorDiv.style.display = 'block';
@@ -208,7 +238,6 @@
                 errorDiv.style.display = 'none';
             }, 5000);
         }
-
         function validateUsername() {
             const username = usernameInput.value.trim();
             if (!username) {
@@ -221,56 +250,46 @@
             }
             return true;
         }
-
         // Создание новой комнаты
         createRoomBtn.addEventListener('click', () => {
             if (!validateUsername()) return;
-            
             createRoomBtn.disabled = true;
             createRoomBtn.textContent = 'Создание...';
-            
             socket.emit('create-room', (roomId) => {
                 const username = usernameInput.value.trim();
                 localStorage.setItem('username', username);
                 window.location.href = `/room/${roomId}`;
             });
         });
-
         // Подключение к существующей комнате
         joinRoomBtn.addEventListener('click', () => {
             if (!validateUsername()) return;
-            
             const roomId = roomIdInput.value.trim();
             if (!roomId) {
                 showError('Пожалуйста, введите ID комнаты');
                 return;
             }
-            
             const username = usernameInput.value.trim();
             localStorage.setItem('username', username);
             window.location.href = `/room/${roomId}`;
         });
-
         // Подключение к комнате по Enter
         roomIdInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 joinRoomBtn.click();
             }
         });
-
         usernameInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 createRoomBtn.click();
             }
         });
-
         // Обработка ошибок сокета
         socket.on('error', (message) => {
             showError(message);
             createRoomBtn.disabled = false;
-            createRoomBtn.textContent = 'Создать новую комнату';
+            createRoomBtn.textContent = '+ Создать новую комнату';
         });
-
         // Восстанавливаем имя пользователя из localStorage
         const savedUsername = localStorage.getItem('username');
         if (savedUsername) {
