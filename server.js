@@ -13,21 +13,26 @@ const io = socketIo(server, {
   }
 });
 
+// Служить статические файлы
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Хранилище комнат
 const rooms = new Map();
 
+// Главная страница
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// Страница комнаты
 app.get('/room/:roomId', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'room.html'));
 });
 
+// WebSocket соединения
 io.on('connection', (socket) => {
   console.log('Пользователь подключился:', socket.id);
-  
+
   // Создание новой комнаты
   socket.on('create-room', (callback) => {
     const roomId = uuidv4();
@@ -36,29 +41,22 @@ io.on('connection', (socket) => {
       users: new Map(),
       messages: []
     });
+    
     console.log('Создана новая комната:', roomId);
     callback(roomId);
   });
 
-  
-
-   socket.on('join-room', ({ roomId, username }) => {
+  // Присоединение к комнате
+  socket.on('join-room', ({ roomId, username }) => {
     console.log(`${username} присоединяется к комнате:`, roomId);
+    
     if (!rooms.has(roomId)) {
       socket.emit('error', 'Комната не найдена');
       return;
     }
+
     const room = rooms.get(roomId);
     
-    // Проверка, если пользователь с таким ID уже есть (например, после перезагрузки)
-    // В этом случае удаляем старую запись
-    if (room.users.has(socket.id)) {
-       console.log(`Пользователь ${username} (${socket.id}) уже в комнате, заменяем.`);
-       // Уведомляем других пользователей об "уходе" старого сокета
-       socket.to(roomId).emit('user-left', socket.id);
-       room.users.delete(socket.id);
-    }
-
     // Добавляем пользователя в комнату
     room.users.set(socket.id, {
       id: socket.id,
@@ -66,17 +64,18 @@ io.on('connection', (socket) => {
       videoEnabled: false,
       audioEnabled: false
     });
+
     socket.join(roomId);
     socket.roomId = roomId;
     socket.username = username;
-    
+
     // Отправляем список пользователей новому участнику
-    const usersList = Array.from(room.users.values()).filter(user => user.id !== socket.id); // Исключаем себя
+    const usersList = Array.from(room.users.values());
     socket.emit('users-in-room', usersList);
     
     // Отправляем историю сообщений
     socket.emit('chat-history', room.messages);
-    
+
     // Уведомляем других пользователей о новом участнике
     socket.to(roomId).emit('user-joined', {
       id: socket.id,
@@ -84,9 +83,11 @@ io.on('connection', (socket) => {
       videoEnabled: false,
       audioEnabled: false
     });
+
     console.log(`${username} присоединился к комнате ${roomId}`);
   });
 
+  // Обмен WebRTC сигналами
   socket.on('offer', ({ target, offer }) => {
     socket.to(target).emit('offer', {
       sender: socket.id,
@@ -108,8 +109,6 @@ io.on('connection', (socket) => {
     });
   });
 
-  
-  
   // Управление медиа
   socket.on('toggle-video', (enabled) => {
     if (socket.roomId && rooms.has(socket.roomId)) {
@@ -139,6 +138,7 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Чат
   socket.on('send-message', (message) => {
     if (socket.roomId && rooms.has(socket.roomId)) {
       const room = rooms.get(socket.roomId);
@@ -151,6 +151,7 @@ io.on('connection', (socket) => {
       
       room.messages.push(chatMessage);
       
+      // Ограничиваем количество сообщений в истории
       if (room.messages.length > 100) {
         room.messages.shift();
       }
@@ -159,20 +160,21 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Отключение пользователя
   socket.on('disconnect', () => {
     console.log('Пользователь отключился:', socket.id);
+    
     if (socket.roomId && rooms.has(socket.roomId)) {
-      const room = rooms.get(socketId.roomId);
-      const user = room.users.get(socket.id);
-      if (user) {
-        room.users.delete(socket.id);
-        // Уведомляем других пользователей об отключении
-        socket.to(socket.roomId).emit('user-left', socket.id);
-        // Удаляем комнату если она пустая
-        if (room.users.size === 0) {
-          rooms.delete(socket.roomId);
-          console.log('Комната удалена:', socket.roomId);
-        }
+      const room = rooms.get(socket.roomId);
+      room.users.delete(socket.id);
+      
+      // Уведомляем других пользователей об отключении
+      socket.to(socket.roomId).emit('user-left', socket.id);
+      
+      // Удаляем комнату если она пустая
+      if (room.users.size === 0) {
+        rooms.delete(socket.roomId);
+        console.log('Комната удалена:', socket.roomId);
       }
     }
   });
