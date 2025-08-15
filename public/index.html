@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Видеозвонки - Главная</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            max-width: 400px;
+            width: 100%;
+            margin: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 28px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 15px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary {
+            background: #f8f9fa;
+            color: #333;
+            border: 2px solid #e1e5e9;
+        }
+
+        .btn-secondary:hover {
+            background: #e9ecef;
+            border-color: #adb5bd;
+        }
+
+        .divider {
+            text-align: center;
+            margin: 25px 0;
+            position: relative;
+            color: #888;
+        }
+
+        .divider::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: #e1e5e9;
+            z-index: 1;
+        }
+
+        .divider span {
+            background: white;
+            padding: 0 15px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .room-id-input {
+            display: flex;
+            gap: 10px;
+        }
+
+        .room-id-input input {
+            flex: 1;
+        }
+
+        .room-id-input button {
+            padding: 12px 20px;
+            white-space: nowrap;
+        }
+
+        .error {
+            color: #dc3545;
+            font-size: 14px;
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 4px;
+            display: none;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                margin: 10px;
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎥 Видеозвонки</h1>
+        
+        <div class="input-group">
+            <label for="username">Ваше имя:</label>
+            <input type="text" id="username" placeholder="Введите ваше имя" maxlength="20">
+        </div>
+
+        <button class="btn btn-primary" id="createRoom">
+            Создать новую комнату
+        </button>
+
+        <div class="divider">
+            <span>или</span>
+        </div>
+
+        <div class="input-group">
+            <label for="roomId">ID комнаты для подключения:</label>
+            <div class="room-id-input">
+                <input type="text" id="roomId" placeholder="Вставьте ID комнаты">
+                <button class="btn btn-secondary" id="joinRoom">
+                    Войти
+                </button>
+            </div>
+        </div>
+
+        <div class="error" id="error"></div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const usernameInput = document.getElementById('username');
+        const createRoomBtn = document.getElementById('createRoom');
+        const roomIdInput = document.getElementById('roomId');
+        const joinRoomBtn = document.getElementById('joinRoom');
+        const errorDiv = document.getElementById('error');
+
+        // Генерируем случайное имя пользователя
+        const randomNames = ['Пользователь', 'Гость', 'Участник'];
+        const randomName = randomNames[Math.floor(Math.random() * randomNames.length)] + Math.floor(Math.random() * 1000);
+        usernameInput.value = randomName;
+
+        function showError(message) {
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        function validateUsername() {
+            const username = usernameInput.value.trim();
+            if (!username) {
+                showError('Пожалуйста, введите ваше имя');
+                return false;
+            }
+            if (username.length < 2) {
+                showError('Имя должно содержать минимум 2 символа');
+                return false;
+            }
+            return true;
+        }
+
+        // Создание новой комнаты
+        createRoomBtn.addEventListener('click', () => {
+            if (!validateUsername()) return;
+            
+            createRoomBtn.disabled = true;
+            createRoomBtn.textContent = 'Создание...';
+            
+            socket.emit('create-room', (roomId) => {
+                const username = usernameInput.value.trim();
+                localStorage.setItem('username', username);
+                window.location.href = `/room/${roomId}`;
+            });
+        });
+
+        // Подключение к существующей комнате
+        joinRoomBtn.addEventListener('click', () => {
+            if (!validateUsername()) return;
+            
+            const roomId = roomIdInput.value.trim();
+            if (!roomId) {
+                showError('Пожалуйста, введите ID комнаты');
+                return;
+            }
+            
+            const username = usernameInput.value.trim();
+            localStorage.setItem('username', username);
+            window.location.href = `/room/${roomId}`;
+        });
+
+        // Подключение к комнате по Enter
+        roomIdInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                joinRoomBtn.click();
+            }
+        });
+
+        usernameInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                createRoomBtn.click();
+            }
+        });
+
+        // Обработка ошибок сокета
+        socket.on('error', (message) => {
+            showError(message);
+            createRoomBtn.disabled = false;
+            createRoomBtn.textContent = 'Создать новую комнату';
+        });
+
+        // Восстанавливаем имя пользователя из localStorage
+        const savedUsername = localStorage.getItem('username');
+        if (savedUsername) {
+            usernameInput.value = savedUsername;
+        }
+    </script>
+</body>
+</html>
