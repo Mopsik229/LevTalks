@@ -123,6 +123,15 @@
             background: #ff4444;
             color: white;
         }
+        /* Новый стиль для кнопки переключения камеры */
+        .control-btn.camera-switch {
+            background: #666;
+            color: white;
+            display: none; /* Скрываем по умолчанию */
+        }
+        .control-btn.camera-switch.visible {
+            display: flex; /* Показываем, если доступны несколько камер */
+        }
         .control-btn:hover {
             transform: scale(1.1);
         }
@@ -294,6 +303,10 @@
                 <button class="control-btn audio" id="toggleAudio" title="Микрофон">
                     🎤
                 </button>
+                <!-- Кнопка переключения камеры -->
+                <button class="control-btn camera-switch" id="switchCamera" title="Переключить камеру">
+                    🔄
+                </button>
                 <button class="control-btn settings" id="showSettings" title="Настройки">
                     ⚙️
                 </button>
@@ -341,6 +354,12 @@
                 this.username = localStorage.getItem('username') || 'Пользователь';
                 this.videoEnabled = false;
                 this.audioEnabled = false;
+                
+                // Новые свойства для переключения камеры
+                this.videoDevices = [];
+                this.currentVideoDeviceIndex = 0;
+                this.isMobile = this.checkIsMobile(); // Определяем, мобильное ли устройство
+
                 // WebRTC конфигурация
                 this.iceConfiguration = {
                     iceServers: [
@@ -351,17 +370,29 @@
                 };
                 this.initializeApp();
             }
+
+            // Функция для определения мобильного устройства
+            checkIsMobile() {
+                return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            }
+
             async initializeApp() {
                 this.setupEventListeners();
                 await this.getDevices();
                 await this.initializeMedia();
                 this.joinRoom();
                 document.getElementById('roomId').textContent = this.roomId;
+
+                // Показываем кнопку переключения камеры, если доступно несколько камер
+                this.updateCameraSwitchButtonVisibility();
             }
+
             setupEventListeners() {
                 // Управление медиа
                 document.getElementById('toggleVideo').addEventListener('click', () => this.toggleVideo());
                 document.getElementById('toggleAudio').addEventListener('click', () => this.toggleAudio());
+                // Добавляем обработчик для кнопки переключения камеры
+                document.getElementById('switchCamera').addEventListener('click', () => this.switchCamera());
                 document.getElementById('showSettings').addEventListener('click', () => this.showSettings());
                 document.getElementById('leaveRoom').addEventListener('click', () => this.leaveRoom());
                 // Чат
@@ -388,19 +419,79 @@
                 this.socket.on('new-message', (message) => this.addMessageToChat(message));
                 this.socket.on('chat-history', (messages) => this.loadChatHistory(messages));
             }
+
             async getDevices() {
                 try {
                     const devices = await navigator.mediaDevices.enumerateDevices();
-                    const videoDevices = devices.filter(device => device.kind === 'videoinput');
+                    this.videoDevices = devices.filter(device => device.kind === 'videoinput');
                     const audioDevices = devices.filter(device => device.kind === 'audioinput');
                     const audioOutputDevices = devices.filter(device => device.kind === 'audiooutput');
-                    this.populateDeviceSelect('videoDevices', videoDevices);
+                    
+                    // Обновляем селекты в настройках
+                    this.populateDeviceSelect('videoDevices', this.videoDevices);
                     this.populateDeviceSelect('audioDevices', audioDevices);
                     this.populateDeviceSelect('audioOutputDevices', audioOutputDevices);
                 } catch (error) {
                     console.error('Ошибка получения устройств:', error);
                 }
             }
+
+            // Функция для обновления видимости кнопки переключения камеры
+            updateCameraSwitchButtonVisibility() {
+                const switchCameraBtn = document.getElementById('switchCamera');
+                // Показываем кнопку только на мобильных устройствах и если доступно больше одной камеры
+                if (this.isMobile && this.videoDevices.length > 1) {
+                    switchCameraBtn.classList.add('visible');
+                } else {
+                    switchCameraBtn.classList.remove('visible');
+                }
+            }
+
+            // Функция для переключения камеры
+            async switchCamera() {
+                if (this.videoDevices.length < 2) return; // Нечего переключать
+
+                try {
+                    // Определяем следующую камеру
+                    this.currentVideoDeviceIndex = (this.currentVideoDeviceIndex + 1) % this.videoDevices.length;
+                    const nextDeviceId = this.videoDevices[this.currentVideoDeviceIndex].deviceId;
+
+                    // Получаем новый поток с выбранной камеры
+                    const newStream = await navigator.mediaDevices.getUserMedia({
+                        video: { deviceId: { exact: nextDeviceId } },
+                        audio: this.localStream ? this.localStream.getAudioTracks().map(track => track.getSettings().deviceId ? { deviceId: { exact: track.getSettings().deviceId } } : true)[0] || true : true
+                    });
+
+                    // Заменяем видео трек в локальном потоке
+                    const videoTrack = newStream.getVideoTracks()[0];
+                    const oldVideoTrack = this.localStream.getVideoTracks()[0];
+                    if (oldVideoTrack) {
+                        this.localStream.removeTrack(oldVideoTrack);
+                        oldVideoTrack.stop();
+                    }
+                    this.localStream.addTrack(videoTrack);
+                    videoTrack.enabled = this.videoEnabled;
+
+                    // Обновляем peer connections
+                    this.peers.forEach(pc => {
+                        const sender = pc.getSenders().find(s => s.track && s.track.kind === 'video');
+                        if (sender) {
+                            sender.replaceTrack(videoTrack);
+                        }
+                    });
+
+                    // Обновляем локальное видео
+                    const localVideo = document.querySelector('#video-local .video-element');
+                    if (localVideo) {
+                        localVideo.srcObject = this.localStream;
+                    }
+
+                } catch (error) {
+                    console.error('Ошибка переключения камеры:', error);
+                    alert('Не удалось переключить камеру');
+                }
+            }
+
             populateDeviceSelect(selectId, devices) {
                 const select = document.getElementById(selectId);
                 select.innerHTML = '';
@@ -411,12 +502,36 @@
                     select.appendChild(option);
                 });
             }
+
             async initializeMedia() {
                 try {
-                    this.localStream = await navigator.mediaDevices.getUserMedia({
-                        video: true,
-                        audio: true
-                    });
+                    // Получаем список устройств для определения facingMode
+                    await this.getDevices();
+                    
+                    let constraints = { video: true, audio: true };
+                    
+                    // Если на мобильном устройстве и есть камеры, пробуем использовать facingMode
+                    if (this.isMobile && this.videoDevices.length > 0) {
+                        // Сначала пытаемся получить фронтальную камеру
+                        constraints = {
+                            video: { facingMode: 'user' },
+                            audio: true
+                        };
+                        
+                        // Находим индекс фронтальной камеры в списке
+                        const frontCamera = this.videoDevices.find(device => 
+                            device.label.toLowerCase().includes('front') || 
+                            device.label.toLowerCase().includes('фронт') ||
+                            (device.label === '' && this.videoDevices.length > 1) // Если метки нет, предполагаем, что первая - фронтальная
+                        );
+                        
+                        if (frontCamera) {
+                            this.currentVideoDeviceIndex = this.videoDevices.indexOf(frontCamera);
+                        }
+                    }
+
+                    this.localStream = await navigator.mediaDevices.getUserMedia(constraints);
+                    
                     // Изначально отключаем видео и аудио
                     this.localStream.getVideoTracks().forEach(track => track.enabled = false);
                     this.localStream.getAudioTracks().forEach(track => track.enabled = false);
@@ -426,12 +541,14 @@
                     alert('Не удается получить доступ к камере и микрофону. Проверьте разрешения.');
                 }
             }
+
             joinRoom() {
                 this.socket.emit('join-room', {
                     roomId: this.roomId,
                     username: this.username
                 });
             }
+
             async handleUsersInRoom(users) {
                 // Этот обработчик вызывается только для нового пользователя.
                 // Он получает список уже существующих пользователей.
@@ -466,6 +583,7 @@
                 }
                 this.removeVideoFromGrid(userId);
             }
+
             handleUserVideoToggle(data) {
                 const videoContainer = document.getElementById(`video-${data.userId}`);
                 if (videoContainer) {
@@ -480,6 +598,7 @@
                     }
                 }
             }
+
             handleUserAudioToggle(data) {
                 const videoContainer = document.getElementById(`video-${data.userId}`);
                 if (videoContainer) {
@@ -489,6 +608,7 @@
                     }
                 }
             }
+
             async createPeerConnection(userId, username, isInitiator) {
                 // Проверка, если соединение уже существует, чтобы избежать дубликатов
                 if (this.peers.has(userId)) {
@@ -497,19 +617,15 @@
                     // this.peers.get(userId).close();
                     // this.peers.delete(userId);
                 }
-
                 console.log(`Создание PeerConnection с ${userId}. Инициатор: ${isInitiator}`);
-
                 const peerConnection = new RTCPeerConnection(this.iceConfiguration);
                 this.peers.set(userId, peerConnection);
-
                 // Добавляем локальный поток ТОЛЬКО если он есть
                 if (this.localStream) {
                     this.localStream.getTracks().forEach(track => {
                         peerConnection.addTrack(track, this.localStream);
                     });
                 }
-
                 // Обработка входящих потоков
                 peerConnection.ontrack = (event) => {
                     console.log(`Получен медиапоток от ${userId}`);
@@ -525,7 +641,6 @@
                          }
                     }
                 };
-
                 // Обработка ICE кандидатов
                 peerConnection.onicecandidate = (event) => {
                     if (event.candidate) {
@@ -535,7 +650,6 @@
                         });
                     }
                 };
-
                 // Обработка закрытия соединения
                 peerConnection.onconnectionstatechange = () => {
                     console.log(`Состояние соединения с ${userId}: ${peerConnection.connectionState}`);
@@ -545,7 +659,6 @@
                         // this.handleUserLeft(userId); // Или другая логика
                     }
                 };
-
                 // Если мы инициаторы, создаем оффер
                 if (isInitiator) {
                     try {
@@ -564,6 +677,7 @@
                     }
                 }
             }
+
             async handleOffer(data) {
                 const peerConnection = this.peers.get(data.sender);
                 if (peerConnection) {
@@ -576,18 +690,21 @@
                     });
                 }
             }
+
             async handleAnswer(data) {
                 const peerConnection = this.peers.get(data.sender);
                 if (peerConnection) {
                     await peerConnection.setRemoteDescription(data.answer);
                 }
             }
+
             async handleIceCandidate(data) {
                 const peerConnection = this.peers.get(data.sender);
                 if (peerConnection) {
                     await peerConnection.addIceCandidate(data.candidate);
                 }
             }
+
             addVideoToGrid(userId, stream, username, videoEnabled, audioEnabled) {
                 const videoGrid = document.getElementById('videoGrid');
                 const videoContainer = document.createElement('div');
@@ -615,12 +732,14 @@
                 videoContainer.appendChild(userInfo);
                 videoGrid.appendChild(videoContainer);
             }
+
             removeVideoFromGrid(userId) {
                 const videoContainer = document.getElementById(`video-${userId}`);
                 if (videoContainer) {
                     videoContainer.remove();
                 }
             }
+
             toggleVideo() {
                 this.videoEnabled = !this.videoEnabled;
                 if (this.localStream) {
@@ -645,6 +764,7 @@
                 }
                 this.socket.emit('toggle-video', this.videoEnabled);
             }
+
             toggleAudio() {
                 this.audioEnabled = !this.audioEnabled;
                 if (this.localStream) {
@@ -662,10 +782,12 @@
                 }
                 this.socket.emit('toggle-audio', this.audioEnabled);
             }
+
             showSettings() {
                 const deviceSelector = document.getElementById('deviceSelector');
                 deviceSelector.style.display = deviceSelector.style.display === 'block' ? 'none' : 'block';
             }
+
             async changeVideoDevice(deviceId) {
                 if (!deviceId) return;
                 try {
@@ -698,6 +820,7 @@
                     console.error('Ошибка смены камеры:', error);
                 }
             }
+
             async changeAudioDevice(deviceId) {
                 if (!deviceId) return;
                 try {
@@ -725,6 +848,7 @@
                     console.error('Ошибка смены микрофона:', error);
                 }
             }
+
             leaveRoom() {
                 if (confirm('Вы действительно хотите покинуть комнату?')) {
                     // Останавливаем локальный поток
@@ -740,12 +864,14 @@
                     window.location.href = '/';
                 }
             }
+
             toggleChat() {
                 const chatPanel = document.getElementById('chatPanel');
                 chatPanel.classList.toggle('hidden');
                 const toggleBtn = document.getElementById('toggleChat');
                 toggleBtn.textContent = chatPanel.classList.contains('hidden') ? '💬 Чат' : '❌ Закрыть';
             }
+
             sendMessage() {
                 const input = document.getElementById('messageInput');
                 const message = input.value.trim();
@@ -754,6 +880,7 @@
                     input.value = '';
                 }
             }
+
             addMessageToChat(message) {
                 const chatMessages = document.getElementById('chatMessages');
                 const messageElement = document.createElement('div');
@@ -769,11 +896,13 @@
                 chatMessages.appendChild(messageElement);
                 chatMessages.scrollTop = chatMessages.scrollHeight;
             }
+
             loadChatHistory(messages) {
                 const chatMessages = document.getElementById('chatMessages');
                 chatMessages.innerHTML = '';
                 messages.forEach(message => this.addMessageToChat(message));
             }
+
             copyRoomLink() {
                 const roomLink = `${window.location.origin}/room/${this.roomId}`;
                 navigator.clipboard.writeText(roomLink).then(() => {
@@ -788,16 +917,19 @@
                     alert('Не удалось скопировать ссылку');
                 });
             }
+
             escapeHtml(text) {
                 const div = document.createElement('div');
                 div.textContent = text;
                 return div.innerHTML;
             }
         }
+
         // Функция для скрытия настроек
         function hideSettings() {
             document.getElementById('deviceSelector').style.display = 'none';
         }
+
         // Запуск приложения
         let app;
         window.addEventListener('load', () => {
@@ -809,6 +941,7 @@
             }
             app = new VideoCallApp();
         });
+
         // Обработка закрытия страницы
         window.addEventListener('beforeunload', () => {
             if (app && app.localStream) {
