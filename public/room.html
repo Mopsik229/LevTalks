@@ -503,6 +503,22 @@
                     console.error('Ошибка получения устройств:', error);
                 }
             }
+
+            populateDeviceSelect(selectId, devices) {
+    const selectElement = document.getElementById(selectId);
+    if (!selectElement) {
+        console.warn(`Элемент с id '${selectId}' не найден для заполнения устройств.`);
+        return;
+    }
+    selectElement.innerHTML = '<option value="">Выберите устройство</option>';
+
+    devices.forEach(device => {
+        const option = document.createElement('option');
+        option.value = device.deviceId;
+        option.text = device.label || `Устройство ${device.deviceId.substr(0, 8)}`;
+        selectElement.appendChild(option);
+    });
+}
 updateCameraSwitchButtonVisibility() {
          const switchCameraBtn = document.getElementById('switchCamera');
          if (this.isMobile) {
@@ -639,7 +655,7 @@ updateCameraSwitchButtonVisibility() {
              alert('Не удалось переключить камеру');
          }
     }
- async initializeMedia() {
+    async initializeMedia() {
         try {
             await this.getDevices(); 
             let constraints = { video: true, audio: true };
