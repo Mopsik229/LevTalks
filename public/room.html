@@ -450,6 +450,7 @@
                 this.videoDevices = [];
                 this.currentVideoDeviceIndex = 0;
                 this.isMobile = this.checkIsMobile(); // Определяем, мобильное ли устройство
+                this.currentFacingMode = 'user'; // 'user' (фронтальная) или 'environment' (задняя)
                 // WebRTC конфигурация
                 this.iceConfiguration = {
                     iceServers: [
@@ -520,95 +521,192 @@
                 }
             }
             // Функция для обновления видимости кнопки переключения камеры
-            updateCameraSwitchButtonVisibility() {
-                const switchCameraBtn = document.getElementById('switchCamera');
-                // Показываем кнопку только на мобильных устройствах и если доступно больше одной камеры
-                if (this.isMobile && this.videoDevices.length > 1) {
-                    switchCameraBtn.classList.add('visible');
-                } else {
-                    switchCameraBtn.classList.remove('visible');
-                }
-            }
+updateCameraSwitchButtonVisibility() {
+         const switchCameraBtn = document.getElementById('switchCamera');
+         // Показываем кнопку только на мобильных устройствах
+         if (this.isMobile) {
+             switchCameraBtn.classList.add('visible');
+         } else {
+             switchCameraBtn.classList.remove('visible');
+         }
+     }
             // Функция для переключения камеры
             async switchCamera() {
-                if (this.videoDevices.length < 2) return; // Нечего переключать
-                try {
-                    // Определяем следующую камеру
-                    this.currentVideoDeviceIndex = (this.currentVideoDeviceIndex + 1) % this.videoDevices.length;
-                    const nextDeviceId = this.videoDevices[this.currentVideoDeviceIndex].deviceId;
-                    // Получаем новый поток с выбранной камеры
-                    const newStream = await navigator.mediaDevices.getUserMedia({
-                        video: { deviceId: { exact: nextDeviceId } },
-                        audio: this.localStream ? this.localStream.getAudioTracks().map(track => track.getSettings().deviceId ? { deviceId: { exact: track.getSettings().deviceId } } : true)[0] || true : true
-                    });
-                    // Заменяем видео трек в локальном потоке
-                    const videoTrack = newStream.getVideoTracks()[0];
-                    const oldVideoTrack = this.localStream.getVideoTracks()[0];
-                    if (oldVideoTrack) {
-                        this.localStream.removeTrack(oldVideoTrack);
-                        oldVideoTrack.stop();
-                    }
-                    this.localStream.addTrack(videoTrack);
-                    videoTrack.enabled = this.videoEnabled;
-                    // Обновляем peer connections
-                    this.peers.forEach(pc => {
-                        const sender = pc.getSenders().find(s => s.track && s.track.kind === 'video');
-                        if (sender) {
-                            sender.replaceTrack(videoTrack);
-                        }
-                    });
-                    // Обновляем локальное видео
-                    const localVideo = document.querySelector('#video-local .video-element');
-                    if (localVideo) {
-                        localVideo.srcObject = this.localStream;
-                    }
-                } catch (error) {
-                    console.error('Ошибка переключения камеры:', error);
-                    alert('Не удалось переключить камеру');
+        if (!this.isMobile) {
+            console.log("Переключение камеры доступно только на мобильных устройствах.");
+            return;
+        }
+
+        try {
+            // Определяем новый facingMode
+            const newFacingMode = this.currentFacingMode === 'user' ? 'environment' : 'user';
+
+            // Получаем новый поток с выбранной камеры
+            const newStream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: newFacingMode },
+                audio: this.localStream ? this.localStream.getAudioTracks().map(track => track.getSettings().deviceId ? { deviceId: { exact: track.getSettings().deviceId } } : true)[0] || true : true
+            });
+
+            // Получаем новый видео трек
+            const newVideoTrack = newStream.getVideoTracks()[0];
+
+            // Останавливаем и удаляем старый видео трек из локального потока
+            const oldVideoTracks = this.localStream.getVideoTracks();
+            oldVideoTracks.forEach(track => {
+                this.localStream.removeTrack(track);
+                track.stop();
+            });
+
+            // Добавляем новый видео трек в локальный поток
+            this.localStream.addTrack(newVideoTrack);
+            newVideoTrack.enabled = this.videoEnabled; // Сохраняем состояние включения/выключения
+
+            // Обновляем peer connections с новым видео треком
+            this.peers.forEach(pc => {
+                const sender = pc.getSenders().find(s => s.track && s.track.kind === 'video');
+                if (sender) {
+                    sender.replaceTrack(newVideoTrack).catch(e => console.error("Ошибка замены видео трека:", e));
                 }
+            });
+
+            // Обновляем локальное видео
+            const localVideo = document.querySelector('#video-local .video-element');
+            if (localVideo) {
+                localVideo.srcObject = this.localStream;
             }
-            populateDeviceSelect(selectId, devices) {
-                const select = document.getElementById(selectId);
-                select.innerHTML = '';
-                devices.forEach(device => {
-                    const option = document.createElement('option');
-                    option.value = device.deviceId;
-                    option.textContent = device.label || `${device.kind} ${devices.indexOf(device) + 1}`;
-                    select.appendChild(option);
-                });
+
+            // Обновляем текущий режим камеры
+            this.currentFacingMode = newFacingMode;
+
+            console.log(`Камера переключена на: ${newFacingMode}`);
+
+        } catch (error) {
+            console.error('Ошибка переключения камеры:', error);
+            // Попробуем альтернативный способ с deviceId, если facingMode не сработал
+            this.switchCameraByDeviceId();
+        }
+    }
+
+    // Альтернативный метод переключения по deviceId (если facingMode не работает)
+    async switchCameraByDeviceId() {
+         if (this.videoDevices.length < 2) {
+             console.warn("Недостаточно камер для переключения по deviceId.");
+             return;
+         }
+
+         try {
+             // Найдем камеры с метками "front" и "back"
+             let frontCamera = null;
+             let backCamera = null;
+             this.videoDevices.forEach((device, index) => {
+                 const labelLower = device.label.toLowerCase();
+                 if (labelLower.includes('front') || labelLower.includes('фронт')) {
+                     frontCamera = { device, index };
+                 } else if (labelLower.includes('back') || labelLower.includes('rear') || labelLower.includes('задн')) {
+                     backCamera = { device, index };
+                 }
+             });
+
+             // Если не нашли по меткам, предположим порядок (часто 0 - задняя, 1 - фронтальная, но не всегда)
+             // Лучше полагаться на facingMode, но если он не помог...
+             if (!frontCamera && this.videoDevices.length > 1) {
+                 // Простая эвристика: первая камера часто задняя, вторая - фронтальная
+                 // Это не всегда верно, но лучше, чем ничего
+                 backCamera = backCamera || { device: this.videoDevices[0], index: 0 };
+                 frontCamera = frontCamera || { device: this.videoDevices[1], index: 1 };
+             } else if (!frontCamera && this.videoDevices.length === 1) {
+                 // Только одна камера
+                 console.warn("Обнаружена только одна камера.");
+                 return;
+             }
+
+             // Определяем, какую камеру включить
+             let targetDevice = null;
+             if (this.currentFacingMode === 'user' && backCamera) {
+                  targetDevice = backCamera.device;
+             } else if (this.currentFacingMode !== 'user' && frontCamera) {
+                  targetDevice = frontCamera.device;
+             } else if (this.currentFacingMode === 'user' && !backCamera && this.videoDevices.length > 1) {
+                  // Если хотим переключиться на заднюю, но не нашли, пробуем другую
+                  targetDevice = this.videoDevices.find((d, i) => i !== (frontCamera ? frontCamera.index : -1));
+             } else if (this.currentFacingMode !== 'user' && !frontCamera && this.videoDevices.length > 1) {
+                  // Если хотим переключиться на фронтальную, но не нашли, пробуем другую
+                  targetDevice = this.videoDevices.find((d, i) => i !== (backCamera ? backCamera.index : -1));
+             }
+
+             if (!targetDevice) {
+                  console.warn("Не удалось определить целевую камеру для переключения.");
+                  return;
+             }
+
+             // Получаем новый поток
+              const newStream = await navigator.mediaDevices.getUserMedia({
+                  video: { deviceId: { exact: targetDevice.deviceId } },
+                  audio: this.localStream ? this.localStream.getAudioTracks().map(track => track.getSettings().deviceId ? { deviceId: { exact: track.getSettings().deviceId } } : true)[0] || true : true
+              });
+
+              // Заменяем видео трек (как в предыдущей версии)
+              const newVideoTrack = newStream.getVideoTracks()[0];
+              const oldVideoTracks = this.localStream.getVideoTracks();
+              oldVideoTracks.forEach(track => {
+                  this.localStream.removeTrack(track);
+                  track.stop();
+              });
+              this.localStream.addTrack(newVideoTrack);
+              newVideoTrack.enabled = this.videoEnabled;
+
+              this.peers.forEach(pc => {
+                  const sender = pc.getSenders().find(s => s.track && s.track.kind === 'video');
+                  if (sender) {
+                      sender.replaceTrack(newVideoTrack).catch(e => console.error("Ошибка замены видео трека (deviceId):", e));
+                  }
+              });
+
+              const localVideo = document.querySelector('#video-local .video-element');
+              if (localVideo) {
+                  localVideo.srcObject = this.localStream;
+              }
+
+              // Обновляем currentFacingMode на основе выбранной камеры (приблизительно)
+              // Это не идеально, но лучшего способа без facingMode у конкретного deviceId нет
+              if (targetDevice === (frontCamera ? frontCamera.device : null) || targetDevice.label.toLowerCase().includes('front') || targetDevice.label.toLowerCase().includes('фронт')) {
+                  this.currentFacingMode = 'user';
+              } else {
+                  this.currentFacingMode = 'environment';
+              }
+
+              console.log(`Камера переключена по deviceId на: ${targetDevice.label || targetDevice.deviceId}`);
+
+         } catch (error) {
+             console.error('Ошибка переключения камеры по deviceId:', error);
+             alert('Не удалось переключить камеру');
+         }
+    }
+ async initializeMedia() {
+        try {
+            // Получаем список устройств для определения facingMode
+            await this.getDevices(); // Убедимся, что список устройств обновлён
+            let constraints = { video: true, audio: true };
+
+            // Если на мобильном устройстве, используем facingMode
+            if (this.isMobile) {
+                // Начинаем с фронтальной камеры
+                constraints = {
+                    video: { facingMode: this.currentFacingMode }, // Используем this.currentFacingMode
+                    audio: true
+                };
             }
-            async initializeMedia() {
-                try {
-                    // Получаем список устройств для определения facingMode
-                    await this.getDevices();
-                    let constraints = { video: true, audio: true };
-                    // Если на мобильном устройстве и есть камеры, пробуем использовать facingMode
-                    if (this.isMobile && this.videoDevices.length > 0) {
-                        // Сначала пытаемся получить фронтальную камеру
-                        constraints = {
-                            video: { facingMode: 'user' },
-                            audio: true
-                        };
-                        // Находим индекс фронтальной камеры в списке
-                        const frontCamera = this.videoDevices.find(device => 
-                            device.label.toLowerCase().includes('front') || 
-                            device.label.toLowerCase().includes('фронт') ||
-                            (device.label === '' && this.videoDevices.length > 1) // Если метки нет, предполагаем, что первая - фронтальная
-                        );
-                        if (frontCamera) {
-                            this.currentVideoDeviceIndex = this.videoDevices.indexOf(frontCamera);
-                        }
-                    }
-                    this.localStream = await navigator.mediaDevices.getUserMedia(constraints);
-                    // Изначально отключаем видео и аудио
-                    this.localStream.getVideoTracks().forEach(track => track.enabled = false);
-                    this.localStream.getAudioTracks().forEach(track => track.enabled = false);
-                    this.addVideoToGrid('local', this.localStream, this.username, false, false);
-                } catch (error) {
-                    console.error('Ошибка доступа к медиа:', error);
-                    alert('Не удается получить доступ к камере и микрофону. Проверьте разрешения.');
-                }
-            }
+
+            this.localStream = await navigator.mediaDevices.getUserMedia(constraints);
+            // Изначально отключаем видео и аудио
+            this.localStream.getVideoTracks().forEach(track => track.enabled = false);
+            this.localStream.getAudioTracks().forEach(track => track.enabled = false);
+            this.addVideoToGrid('local', this.localStream, this.username, false, false);
+        } catch (error) {
+            console.error('Ошибка доступа к медиа:', error);
+            alert('Не удается получить доступ к камере и микрофону. Проверьте разрешения.');
+        }
+    }
             joinRoom() {
                 this.socket.emit('join-room', {
                     roomId: this.roomId,
