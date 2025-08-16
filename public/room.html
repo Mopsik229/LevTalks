@@ -12,26 +12,73 @@
         }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #1a1a1a;
+            background: #353839; /* Основной цвет фона */
             color: white;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
             overflow: hidden;
         }
-        .main-container {
+        .header {
+            background: rgba(53, 56, 57, 0.95); /* Основной цвет с прозрачностью */
+            padding: 15px 20px;
             display: flex;
-            height: 100vh;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0; /* Не сжимается */
+            border-bottom: 1px solid #555;
+        }
+        .room-info {
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        #roomId {
+            color: #FFE4B5; /* Акцентный цвет для ID комнаты */
+            font-weight: bold;
+        }
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .copy-btn, .toggle-chat {
+            background: #FFE4B5; /* Акцентный цвет фона */
+            color: #353839; /* Основной цвет текста */
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .copy-btn:hover, .toggle-chat:hover {
+            background: #e6cdbd;
+            transform: translateY(-2px);
+        }
+        .main-content {
+            display: flex;
+            flex: 1; /* Занимает всё оставшееся пространство */
+            min-height: 0; /* Критично для flexbox, чтобы внутренние элементы могли скроллиться */
         }
         .video-area {
             flex: 1;
             display: flex;
             flex-direction: column;
-            position: relative;
+            min-width: 0; /* Позволяет видео-сетке сжиматься */
         }
         .video-grid {
             flex: 1;
             display: grid;
             gap: 10px;
             padding: 10px;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            overflow-y: auto;
+            /* Адаптивная сетка */
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
         }
         .video-container {
             position: relative;
@@ -40,9 +87,10 @@
             overflow: hidden;
             border: 2px solid transparent;
             transition: border-color 0.3s;
+            aspect-ratio: 16 / 9; /* Сохраняем пропорции видео */
         }
         .video-container.speaking {
-            border-color: #4CAF50;
+            border-color: #FFE4B5; /* Акцентный цвет для говорящего */
         }
         .video-element {
             width: 100%;
@@ -55,9 +103,9 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            font-size: 4rem;
-            color: white;
+            background: linear-gradient(135deg, #353839, #555);
+            font-size: 2rem;
+            color: #FFE4B5;
         }
         .user-info {
             position: absolute;
@@ -81,13 +129,14 @@
             background: #4CAF50;
         }
         .controls {
-            background: rgba(0,0,0,0.8);
-            padding: 20px;
+            background: rgba(53, 56, 57, 0.95); /* Основной цвет с прозрачностью */
+            padding: 15px 20px;
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 15px;
-            backdrop-filter: blur(10px);
+            gap: 20px;
+            flex-shrink: 0; /* Не сжимается, фиксируется внизу */
+            border-top: 1px solid #555;
         }
         .control-btn {
             width: 50px;
@@ -100,6 +149,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            flex-shrink: 0;
         }
         .control-btn.video {
             background: #4CAF50;
@@ -135,44 +185,22 @@
         .control-btn:hover {
             transform: scale(1.1);
         }
-        .room-info {
-            background: rgba(0,0,0,0.5);
-            padding: 10px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 14px;
-        }
-        .copy-btn {
-            background: #667eea;
-            color: white;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 12px;
-        }
-        .copy-btn:hover {
-            background: #5a6fd8;
-        }
         .chat-panel {
             width: 320px;
-            background: #2a2a2a;
+            background: #2a2a2a; /* Фон чата */
             border-left: 1px solid #444;
             display: flex;
             flex-direction: column;
-            transition: transform 0.3s;
-        }
-        .chat-panel.hidden {
-            transform: translateX(100%);
+            flex-shrink: 0; /* Не сжимается */
         }
         .chat-header {
-            padding: 20px;
+            padding: 15px 20px;
             border-bottom: 1px solid #444;
             font-weight: 600;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            background: rgba(53, 56, 57, 0.8);
         }
         .chat-messages {
             flex: 1;
@@ -187,33 +215,35 @@
         }
         .message-header {
             font-size: 12px;
-            color: #888;
+            color: #aaa;
             margin-bottom: 5px;
         }
         .message-content {
             word-wrap: break-word;
         }
         .chat-input {
-            padding: 20px;
+            padding: 15px;
             border-top: 1px solid #444;
             display: flex;
             gap: 10px;
+            background: rgba(42, 42, 42, 0.9);
         }
         .chat-input input {
             flex: 1;
             padding: 10px;
-            border: 1px solid #444;
-            border-radius: 5px;
+            border: 1px solid #555;
+            border-radius: 20px;
             background: #1a1a1a;
             color: white;
         }
         .chat-input button {
             padding: 10px 15px;
-            background: #667eea;
-            color: white;
+            background: #FFE4B5; /* Акцентный цвет */
+            color: #353839; /* Основной цвет текста */
             border: none;
-            border-radius: 5px;
+            border-radius: 20px;
             cursor: pointer;
+            font-weight: bold;
         }
         .device-selector {
             position: absolute;
@@ -225,6 +255,7 @@
             min-width: 300px;
             display: none;
             z-index: 1000;
+            border: 1px solid #555;
         }
         .device-group {
             margin-bottom: 15px;
@@ -251,74 +282,116 @@
             cursor: pointer;
             float: right;
         }
-        .toggle-chat {
-            background: #666;
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-left: auto;
+        /* Скрытие кнопки скрытия чата */
+        .toggle-chat, .close-chat-btn {
+            display: none !important;
         }
+
+        /* Адаптивность */
+        @media (max-width: 1024px) {
+            .chat-panel {
+                width: 280px;
+            }
+            .control-btn {
+                width: 45px;
+                height: 45px;
+                font-size: 18px;
+            }
+        }
+
         @media (max-width: 768px) {
-            .main-container {
+            body {
+                height: 100dvh; /* Используем dvh для лучшей поддержки мобильных браузеров */
+            }
+            .main-content {
                 flex-direction: column;
             }
             .chat-panel {
                 width: 100%;
-                height: 300px;
+                height: 35%;
+                min-height: 200px;
                 border-left: none;
                 border-top: 1px solid #444;
             }
             .video-grid {
-                grid-template-columns: 1fr;
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
             }
             .controls {
-                flex-wrap: wrap;
-                gap: 10px;
+                padding: 12px 10px;
+                gap: 12px;
             }
-            .room-info {
+            .control-btn {
+                width: 40px;
+                height: 40px;
+                font-size: 16px;
+            }
+            .header {
                 flex-direction: column;
                 gap: 10px;
-                align-items: flex-start;
+                text-align: center;
+            }
+            .header-actions {
+                width: 100%;
+                justify-content: center;
+            }
+            .room-info {
+                font-size: 14px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .video-grid {
+                padding: 5px;
+                gap: 5px;
+            }
+            .video-container {
+                border-radius: 5px;
+            }
+            .controls {
+                gap: 8px;
+                padding: 10px 5px;
+            }
+            .control-btn {
+                width: 35px;
+                height: 35px;
+                font-size: 14px;
+            }
+            .chat-header, .chat-input {
+                padding: 10px 15px;
+            }
+            .device-selector {
+                left: 10px;
+                right: 10px;
+                top: auto;
+                bottom: 70px;
+                min-width: auto;
             }
         }
     </style>
 </head>
 <body>
-    <div class="main-container">
+    <div class="header">
+        <div class="room-info">
+            Комната: <strong id="roomId"></strong>
+        </div>
+        <div class="header-actions">
+            <button class="copy-btn" id="copyRoomLink">📋 Копировать ссылку</button>
+            <!-- Кнопка скрытия чата скрыта по требованию -->
+            <button class="toggle-chat" id="toggleChat">💬 Чат</button>
+        </div>
+    </div>
+
+    <div class="main-content">
         <div class="video-area">
-            <div class="room-info">
-                <span>Комната: <strong id="roomId"></strong></span>
-                <button class="copy-btn" id="copyRoomLink">📋 Копировать ссылку</button>
-                <button class="toggle-chat" id="toggleChat">💬 Чат</button>
-            </div>
             <div class="video-grid" id="videoGrid">
                 <!-- Видео будут добавляться динамически -->
-            </div>
-            <div class="controls">
-                <button class="control-btn video" id="toggleVideo" title="Камера">
-                    📹
-                </button>
-                <button class="control-btn audio" id="toggleAudio" title="Микрофон">
-                    🎤
-                </button>
-                <!-- Кнопка переключения камеры -->
-                <button class="control-btn camera-switch" id="switchCamera" title="Переключить камеру">
-                    🔄
-                </button>
-                <button class="control-btn settings" id="showSettings" title="Настройки">
-                    ⚙️
-                </button>
-                <button class="control-btn leave" id="leaveRoom" title="Покинуть">
-                    📞
-                </button>
             </div>
         </div>
         <div class="chat-panel" id="chatPanel">
             <div class="chat-header">
                 💬 Чат
-                <button class="close-btn" id="closeChat">×</button>
+                <!-- Кнопка закрытия чата скрыта по требованию -->
+                <button class="close-btn close-chat-btn" id="closeChat">×</button>
             </div>
             <div class="chat-messages" id="chatMessages"></div>
             <div class="chat-input">
@@ -327,9 +400,29 @@
             </div>
         </div>
     </div>
+
+    <div class="controls">
+        <button class="control-btn video" id="toggleVideo" title="Камера">
+            📹
+        </button>
+        <button class="control-btn audio" id="toggleAudio" title="Микрофон">
+            🎤
+        </button>
+        <!-- Кнопка переключения камеры -->
+        <button class="control-btn camera-switch" id="switchCamera" title="Переключить камеру">
+            🔄
+        </button>
+        <button class="control-btn settings" id="showSettings" title="Настройки">
+            ⚙️
+        </button>
+        <button class="control-btn leave" id="leaveRoom" title="Покинуть">
+            📞
+        </button>
+    </div>
+
     <div class="device-selector" id="deviceSelector">
         <button class="close-btn" onclick="hideSettings()">×</button>
-        <h3 style="margin-bottom: 20px;">Настройки устройств</h3>
+        <h3 style="margin-bottom: 20px; color: #FFE4B5;">Настройки устройств</h3>
         <div class="device-group">
             <label>Камера:</label>
             <select id="videoDevices"></select>
@@ -345,7 +438,7 @@
     </div>
     <script src="/socket.io/socket.io.js"></script>
     <script>
-        class VideoCallApp {
+       class VideoCallApp {
             constructor() {
                 this.socket = io();
                 this.localStream = null;
@@ -354,12 +447,10 @@
                 this.username = localStorage.getItem('username') || 'Пользователь';
                 this.videoEnabled = false;
                 this.audioEnabled = false;
-                
                 // Новые свойства для переключения камеры
                 this.videoDevices = [];
                 this.currentVideoDeviceIndex = 0;
                 this.isMobile = this.checkIsMobile(); // Определяем, мобильное ли устройство
-
                 // WebRTC конфигурация
                 this.iceConfiguration = {
                     iceServers: [
@@ -370,23 +461,19 @@
                 };
                 this.initializeApp();
             }
-
             // Функция для определения мобильного устройства
             checkIsMobile() {
                 return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
             }
-
             async initializeApp() {
                 this.setupEventListeners();
                 await this.getDevices();
                 await this.initializeMedia();
                 this.joinRoom();
                 document.getElementById('roomId').textContent = this.roomId;
-
                 // Показываем кнопку переключения камеры, если доступно несколько камер
                 this.updateCameraSwitchButtonVisibility();
             }
-
             setupEventListeners() {
                 // Управление медиа
                 document.getElementById('toggleVideo').addEventListener('click', () => this.toggleVideo());
@@ -395,9 +482,9 @@
                 document.getElementById('switchCamera').addEventListener('click', () => this.switchCamera());
                 document.getElementById('showSettings').addEventListener('click', () => this.showSettings());
                 document.getElementById('leaveRoom').addEventListener('click', () => this.leaveRoom());
-                // Чат
-                document.getElementById('toggleChat').addEventListener('click', () => this.toggleChat());
-                document.getElementById('closeChat').addEventListener('click', () => this.toggleChat());
+                // Чат (кнопки скрыты, но логика остается)
+                // document.getElementById('toggleChat').addEventListener('click', () => this.toggleChat());
+                // document.getElementById('closeChat').addEventListener('click', () => this.toggleChat());
                 document.getElementById('sendMessage').addEventListener('click', () => this.sendMessage());
                 document.getElementById('messageInput').addEventListener('keypress', (e) => {
                     if (e.key === 'Enter') this.sendMessage();
@@ -419,14 +506,12 @@
                 this.socket.on('new-message', (message) => this.addMessageToChat(message));
                 this.socket.on('chat-history', (messages) => this.loadChatHistory(messages));
             }
-
             async getDevices() {
                 try {
                     const devices = await navigator.mediaDevices.enumerateDevices();
                     this.videoDevices = devices.filter(device => device.kind === 'videoinput');
                     const audioDevices = devices.filter(device => device.kind === 'audioinput');
                     const audioOutputDevices = devices.filter(device => device.kind === 'audiooutput');
-                    
                     // Обновляем селекты в настройках
                     this.populateDeviceSelect('videoDevices', this.videoDevices);
                     this.populateDeviceSelect('audioDevices', audioDevices);
@@ -435,7 +520,6 @@
                     console.error('Ошибка получения устройств:', error);
                 }
             }
-
             // Функция для обновления видимости кнопки переключения камеры
             updateCameraSwitchButtonVisibility() {
                 const switchCameraBtn = document.getElementById('switchCamera');
@@ -446,22 +530,18 @@
                     switchCameraBtn.classList.remove('visible');
                 }
             }
-
             // Функция для переключения камеры
             async switchCamera() {
                 if (this.videoDevices.length < 2) return; // Нечего переключать
-
                 try {
                     // Определяем следующую камеру
                     this.currentVideoDeviceIndex = (this.currentVideoDeviceIndex + 1) % this.videoDevices.length;
                     const nextDeviceId = this.videoDevices[this.currentVideoDeviceIndex].deviceId;
-
                     // Получаем новый поток с выбранной камеры
                     const newStream = await navigator.mediaDevices.getUserMedia({
                         video: { deviceId: { exact: nextDeviceId } },
                         audio: this.localStream ? this.localStream.getAudioTracks().map(track => track.getSettings().deviceId ? { deviceId: { exact: track.getSettings().deviceId } } : true)[0] || true : true
                     });
-
                     // Заменяем видео трек в локальном потоке
                     const videoTrack = newStream.getVideoTracks()[0];
                     const oldVideoTrack = this.localStream.getVideoTracks()[0];
@@ -471,7 +551,6 @@
                     }
                     this.localStream.addTrack(videoTrack);
                     videoTrack.enabled = this.videoEnabled;
-
                     // Обновляем peer connections
                     this.peers.forEach(pc => {
                         const sender = pc.getSenders().find(s => s.track && s.track.kind === 'video');
@@ -479,19 +558,16 @@
                             sender.replaceTrack(videoTrack);
                         }
                     });
-
                     // Обновляем локальное видео
                     const localVideo = document.querySelector('#video-local .video-element');
                     if (localVideo) {
                         localVideo.srcObject = this.localStream;
                     }
-
                 } catch (error) {
                     console.error('Ошибка переключения камеры:', error);
                     alert('Не удалось переключить камеру');
                 }
             }
-
             populateDeviceSelect(selectId, devices) {
                 const select = document.getElementById(selectId);
                 select.innerHTML = '';
@@ -502,14 +578,11 @@
                     select.appendChild(option);
                 });
             }
-
             async initializeMedia() {
                 try {
                     // Получаем список устройств для определения facingMode
                     await this.getDevices();
-                    
                     let constraints = { video: true, audio: true };
-                    
                     // Если на мобильном устройстве и есть камеры, пробуем использовать facingMode
                     if (this.isMobile && this.videoDevices.length > 0) {
                         // Сначала пытаемся получить фронтальную камеру
@@ -517,21 +590,17 @@
                             video: { facingMode: 'user' },
                             audio: true
                         };
-                        
                         // Находим индекс фронтальной камеры в списке
                         const frontCamera = this.videoDevices.find(device => 
                             device.label.toLowerCase().includes('front') || 
                             device.label.toLowerCase().includes('фронт') ||
                             (device.label === '' && this.videoDevices.length > 1) // Если метки нет, предполагаем, что первая - фронтальная
                         );
-                        
                         if (frontCamera) {
                             this.currentVideoDeviceIndex = this.videoDevices.indexOf(frontCamera);
                         }
                     }
-
                     this.localStream = await navigator.mediaDevices.getUserMedia(constraints);
-                    
                     // Изначально отключаем видео и аудио
                     this.localStream.getVideoTracks().forEach(track => track.enabled = false);
                     this.localStream.getAudioTracks().forEach(track => track.enabled = false);
@@ -541,14 +610,12 @@
                     alert('Не удается получить доступ к камере и микрофону. Проверьте разрешения.');
                 }
             }
-
             joinRoom() {
                 this.socket.emit('join-room', {
                     roomId: this.roomId,
                     username: this.username
                 });
             }
-
             async handleUsersInRoom(users) {
                 // Этот обработчик вызывается только для нового пользователя.
                 // Он получает список уже существующих пользователей.
@@ -562,7 +629,6 @@
                     }
                 }
             }
-
             async handleUserJoined(user) {
                  // Этот обработчик вызывается у уже существующих пользователей,
                  // когда к комнате присоединяется новый пользователь.
@@ -574,7 +640,6 @@
                      }
                  }
             }
-
             handleUserLeft(userId) {
                 console.log(`Пользователь ${userId} покинул комнату`);
                 if (this.peers.has(userId)) {
@@ -583,7 +648,6 @@
                 }
                 this.removeVideoFromGrid(userId);
             }
-
             handleUserVideoToggle(data) {
                 const videoContainer = document.getElementById(`video-${data.userId}`);
                 if (videoContainer) {
@@ -598,7 +662,6 @@
                     }
                 }
             }
-
             handleUserAudioToggle(data) {
                 const videoContainer = document.getElementById(`video-${data.userId}`);
                 if (videoContainer) {
@@ -608,7 +671,6 @@
                     }
                 }
             }
-
             async createPeerConnection(userId, username, isInitiator) {
                 // Проверка, если соединение уже существует, чтобы избежать дубликатов
                 if (this.peers.has(userId)) {
@@ -677,7 +739,6 @@
                     }
                 }
             }
-
             async handleOffer(data) {
                 const peerConnection = this.peers.get(data.sender);
                 if (peerConnection) {
@@ -690,21 +751,18 @@
                     });
                 }
             }
-
             async handleAnswer(data) {
                 const peerConnection = this.peers.get(data.sender);
                 if (peerConnection) {
                     await peerConnection.setRemoteDescription(data.answer);
                 }
             }
-
             async handleIceCandidate(data) {
                 const peerConnection = this.peers.get(data.sender);
                 if (peerConnection) {
                     await peerConnection.addIceCandidate(data.candidate);
                 }
             }
-
             addVideoToGrid(userId, stream, username, videoEnabled, audioEnabled) {
                 const videoGrid = document.getElementById('videoGrid');
                 const videoContainer = document.createElement('div');
@@ -732,14 +790,12 @@
                 videoContainer.appendChild(userInfo);
                 videoGrid.appendChild(videoContainer);
             }
-
             removeVideoFromGrid(userId) {
                 const videoContainer = document.getElementById(`video-${userId}`);
                 if (videoContainer) {
                     videoContainer.remove();
                 }
             }
-
             toggleVideo() {
                 this.videoEnabled = !this.videoEnabled;
                 if (this.localStream) {
@@ -764,7 +820,6 @@
                 }
                 this.socket.emit('toggle-video', this.videoEnabled);
             }
-
             toggleAudio() {
                 this.audioEnabled = !this.audioEnabled;
                 if (this.localStream) {
@@ -782,12 +837,10 @@
                 }
                 this.socket.emit('toggle-audio', this.audioEnabled);
             }
-
             showSettings() {
                 const deviceSelector = document.getElementById('deviceSelector');
                 deviceSelector.style.display = deviceSelector.style.display === 'block' ? 'none' : 'block';
             }
-
             async changeVideoDevice(deviceId) {
                 if (!deviceId) return;
                 try {
@@ -820,7 +873,6 @@
                     console.error('Ошибка смены камеры:', error);
                 }
             }
-
             async changeAudioDevice(deviceId) {
                 if (!deviceId) return;
                 try {
@@ -848,7 +900,6 @@
                     console.error('Ошибка смены микрофона:', error);
                 }
             }
-
             leaveRoom() {
                 if (confirm('Вы действительно хотите покинуть комнату?')) {
                     // Останавливаем локальный поток
@@ -864,14 +915,12 @@
                     window.location.href = '/';
                 }
             }
-
-            toggleChat() {
-                const chatPanel = document.getElementById('chatPanel');
-                chatPanel.classList.toggle('hidden');
-                const toggleBtn = document.getElementById('toggleChat');
-                toggleBtn.textContent = chatPanel.classList.contains('hidden') ? '💬 Чат' : '❌ Закрыть';
-            }
-
+            // toggleChat() { // Функция скрыта
+            //     const chatPanel = document.getElementById('chatPanel');
+            //     chatPanel.classList.toggle('hidden');
+            //     const toggleBtn = document.getElementById('toggleChat');
+            //     toggleBtn.textContent = chatPanel.classList.contains('hidden') ? '💬 Чат' : '❌ Закрыть';
+            // }
             sendMessage() {
                 const input = document.getElementById('messageInput');
                 const message = input.value.trim();
@@ -880,7 +929,6 @@
                     input.value = '';
                 }
             }
-
             addMessageToChat(message) {
                 const chatMessages = document.getElementById('chatMessages');
                 const messageElement = document.createElement('div');
@@ -896,13 +944,11 @@
                 chatMessages.appendChild(messageElement);
                 chatMessages.scrollTop = chatMessages.scrollHeight;
             }
-
             loadChatHistory(messages) {
                 const chatMessages = document.getElementById('chatMessages');
                 chatMessages.innerHTML = '';
                 messages.forEach(message => this.addMessageToChat(message));
             }
-
             copyRoomLink() {
                 const roomLink = `${window.location.origin}/room/${this.roomId}`;
                 navigator.clipboard.writeText(roomLink).then(() => {
@@ -917,19 +963,16 @@
                     alert('Не удалось скопировать ссылку');
                 });
             }
-
             escapeHtml(text) {
                 const div = document.createElement('div');
                 div.textContent = text;
                 return div.innerHTML;
             }
         }
-
         // Функция для скрытия настроек
         function hideSettings() {
             document.getElementById('deviceSelector').style.display = 'none';
         }
-
         // Запуск приложения
         let app;
         window.addEventListener('load', () => {
@@ -941,7 +984,6 @@
             }
             app = new VideoCallApp();
         });
-
         // Обработка закрытия страницы
         window.addEventListener('beforeunload', () => {
             if (app && app.localStream) {
