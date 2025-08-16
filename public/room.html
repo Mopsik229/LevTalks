@@ -14,7 +14,7 @@
         }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #353839; /* Основной цвет фона */
+            background: #353839;
             color: white;
             height: 100vh;
             display: flex;
@@ -22,12 +22,12 @@
             overflow: hidden;
         }
         .header {
-            background: rgba(53, 56, 57, 0.95); /* Основной цвет с прозрачностью */
+            background: rgba(53, 56, 57, 0.95);
             padding: 15px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            flex-shrink: 0; /* Не сжимается */
+            flex-shrink: 0;
             border-bottom: 1px solid #555;
         }
         .room-info {
@@ -37,7 +37,7 @@
             gap: 10px;
         }
         #roomId {
-            color: #FFE4B5; /* Акцентный цвет для ID комнаты */
+            color: #FFE4B5; 
             font-weight: bold;
         }
         .header-actions {
@@ -45,8 +45,8 @@
             gap: 10px;
         }
         .copy-btn, .toggle-chat {
-            background: #FFE4B5; /* Акцентный цвет фона */
-            color: #353839; /* Основной цвет текста */
+            background: #FFE4B5; 
+            color: #353839;
             border: none;
             padding: 8px 15px;
             border-radius: 20px;
@@ -64,14 +64,14 @@
         }
         .main-content {
             display: flex;
-            flex: 1; /* Занимает всё оставшееся пространство */
-            min-height: 0; /* Критично для flexbox, чтобы внутренние элементы могли скроллиться */
+            flex: 1;
+            min-height: 0; 
         }
         .video-area {
             flex: 1;
             display: flex;
             flex-direction: column;
-            min-width: 0; /* Позволяет видео-сетке сжиматься */
+            min-width: 0; 
         }
         .video-grid {
             flex: 1;
@@ -79,7 +79,6 @@
             gap: 10px;
             padding: 10px;
             overflow-y: auto;
-            /* Адаптивная сетка */
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
         }
         .video-container {
@@ -91,7 +90,7 @@
             transition: border-color 0.3s;
         }
         .video-container.speaking {
-            border-color: #FFE4B5; /* Акцентный цвет для говорящего */
+            border-color: #FFE4B5;
         }
         .video-element {
             width: 100%;
@@ -130,13 +129,13 @@
             background: #4CAF50;
         }
         .controls {
-            background: rgba(53, 56, 57, 0.95); /* Основной цвет с прозрачностью */
+            background: rgba(53, 56, 57, 0.95);
             padding: 15px 20px;
             display: flex;
             justify-content: center;
             align-items: center;
             gap: 20px;
-            flex-shrink: 0; /* Не сжимается, фиксируется внизу */
+            flex-shrink: 0; 
             border-top: 1px solid #555;
         }
         .control-btn {
@@ -174,25 +173,24 @@
             background: #ff4444;
             color: white;
         }
-        /* Стили для кнопки переключения камеры */
         .control-btn.camera-switch {
             background: #666;
             color: white;
-            display: none; /* Скрываем по умолчанию */
+            display: none; 
         }
         .control-btn.camera-switch.visible {
-            display: flex; /* Показываем, если доступны несколько камер */
+            display: flex; 
         }
         .control-btn:hover {
             transform: scale(1.1);
         }
         .chat-panel {
             width: 320px;
-            background: #2a2a2a; /* Фон чата */
+            background: #2a2a2a;
             border-left: 1px solid #444;
             display: flex;
             flex-direction: column;
-            flex-shrink: 0; /* Не сжимается */
+            flex-shrink: 0;
         }
         .chat-header {
             padding: 15px 20px;
@@ -239,8 +237,8 @@
         }
         .chat-input button {
             padding: 10px 15px;
-            background: #FFE4B5; /* Акцентный цвет */
-            color: #353839; /* Основной цвет текста */
+            background: #FFE4B5; 
+            color: #353839; 
             border: none;
             border-radius: 20px;
             cursor: pointer;
@@ -283,12 +281,10 @@
             cursor: pointer;
             float: right;
         }
-        /* Скрытие кнопки скрытия чата */
         .toggle-chat, .close-chat-btn {
             display: none !important;
         }
 
-        /* Адаптивность */
         @media (max-width: 1024px) {
             .chat-panel {
                 width: 280px;
@@ -302,7 +298,7 @@
 
         @media (max-width: 768px) {
             body {
-                height: 100dvh; /* Используем dvh для лучшей поддержки мобильных браузеров */
+                height: 100dvh;
             }
             .main-content {
                 flex-direction: column;
@@ -377,7 +373,6 @@
         </div>
         <div class="header-actions">
             <button class="copy-btn" id="copyRoomLink">📋 Копировать ссылку</button>
-            <!-- Кнопка скрытия чата скрыта по требованию -->
             <button class="toggle-chat" id="toggleChat">💬 Чат</button>
         </div>
     </div>
@@ -385,21 +380,16 @@
     <div class="main-content">
         <div class="video-area">
             <div class="video-grid" id="videoGrid">
-                <!-- Видео будут добавляться динамически -->
             </div>
         </div>
         <div class="chat-panel" id="chatPanel">
             <div class="chat-header">
                 💬 Чат
-                <!-- Кнопка закрытия чата скрыта по требованию -->
                 <button class="close-btn close-chat-btn" id="closeChat">×</button>
             </div>
             <div class="chat-messages" id="chatMessages"></div>
             <div class="chat-input">
     <input type="text" id="messageInput" placeholder="Введите сообщение...">
-    <!-- Кнопка для выбора файла -->
-    <button id="attachFileBtn" title="Прикрепить файл">📎</button>
-    <!-- Скрытый input для файлов -->
     <input type="file" id="fileInput" accept="image/*" style="display: none;">
     <button id="sendMessage">➤</button>
             </div>
@@ -413,7 +403,6 @@
         <button class="control-btn audio" id="toggleAudio" title="Микрофон">
             🎤
         </button>
-        <!-- Кнопка переключения камеры -->
         <button class="control-btn camera-switch" id="switchCamera" title="Переключить камеру">
             🔄
         </button>
@@ -452,12 +441,11 @@
                 this.username = localStorage.getItem('username') || 'Пользователь';
                 this.videoEnabled = false;
                 this.audioEnabled = false;
-                // Новые свойства для переключения камеры
                 this.videoDevices = [];
                 this.currentVideoDeviceIndex = 0;
-                this.isMobile = this.checkIsMobile(); // Определяем, мобильное ли устройство
-                this.currentFacingMode = 'user'; // 'user' (фронтальная) или 'environment' (задняя)
-                // WebRTC конфигурация
+                this.isMobile = this.checkIsMobile(); 
+                this.currentFacingMode = 'user'; 
+
                 this.iceConfiguration = {
                     iceServers: [
                         { urls: 'stun:stun.l.google.com:19302' },
@@ -467,7 +455,6 @@
                 };
                 this.initializeApp();
             }
-            // Функция для определения мобильного устройства
             checkIsMobile() {
                 return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
             }
@@ -477,30 +464,21 @@
                 await this.initializeMedia();
                 this.joinRoom();
                 document.getElementById('roomId').textContent = this.roomId;
-                // Показываем кнопку переключения камеры, если доступно несколько камер
                 this.updateCameraSwitchButtonVisibility();
             }
             setupEventListeners() {
-                // Управление медиа
                 document.getElementById('toggleVideo').addEventListener('click', () => this.toggleVideo());
                 document.getElementById('toggleAudio').addEventListener('click', () => this.toggleAudio());
-                // Добавляем обработчик для кнопки переключения камеры
                 document.getElementById('switchCamera').addEventListener('click', () => this.switchCamera());
                 document.getElementById('showSettings').addEventListener('click', () => this.showSettings());
                 document.getElementById('leaveRoom').addEventListener('click', () => this.leaveRoom());
-                // Чат (кнопки скрыты, но логика остается)
-                // document.getElementById('toggleChat').addEventListener('click', () => this.toggleChat());
-                // document.getElementById('closeChat').addEventListener('click', () => this.toggleChat());
                 document.getElementById('sendMessage').addEventListener('click', () => this.sendMessage());
                 document.getElementById('messageInput').addEventListener('keypress', (e) => {
                     if (e.key === 'Enter') this.sendMessage();
                 });
-                // Копирование ссылки
                 document.getElementById('copyRoomLink').addEventListener('click', () => this.copyRoomLink());
-                // Смена устройств
                 document.getElementById('videoDevices').addEventListener('change', (e) => this.changeVideoDevice(e.target.value));
                 document.getElementById('audioDevices').addEventListener('change', (e) => this.changeAudioDevice(e.target.value));
-                // Socket события
                 this.socket.on('users-in-room', (users) => this.handleUsersInRoom(users));
                 this.socket.on('user-joined', (user) => this.handleUserJoined(user));
                 this.socket.on('user-left', (userId) => this.handleUserLeft(userId));
@@ -518,7 +496,6 @@
                     this.videoDevices = devices.filter(device => device.kind === 'videoinput');
                     const audioDevices = devices.filter(device => device.kind === 'audioinput');
                     const audioOutputDevices = devices.filter(device => device.kind === 'audiooutput');
-                    // Обновляем селекты в настройках
                     this.populateDeviceSelect('videoDevices', this.videoDevices);
                     this.populateDeviceSelect('audioDevices', audioDevices);
                     this.populateDeviceSelect('audioOutputDevices', audioOutputDevices);
@@ -526,17 +503,14 @@
                     console.error('Ошибка получения устройств:', error);
                 }
             }
-            // Функция для обновления видимости кнопки переключения камеры
 updateCameraSwitchButtonVisibility() {
          const switchCameraBtn = document.getElementById('switchCamera');
-         // Показываем кнопку только на мобильных устройствах
          if (this.isMobile) {
              switchCameraBtn.classList.add('visible');
          } else {
              switchCameraBtn.classList.remove('visible');
          }
      }
-            // Функция для переключения камеры
             async switchCamera() {
         if (!this.isMobile) {
             console.log("Переключение камеры доступно только на мобильных устройствах.");
@@ -544,30 +518,24 @@ updateCameraSwitchButtonVisibility() {
         }
 
         try {
-            // Определяем новый facingMode
             const newFacingMode = this.currentFacingMode === 'user' ? 'environment' : 'user';
 
-            // Получаем новый поток с выбранной камеры
             const newStream = await navigator.mediaDevices.getUserMedia({
                 video: { facingMode: newFacingMode },
                 audio: this.localStream ? this.localStream.getAudioTracks().map(track => track.getSettings().deviceId ? { deviceId: { exact: track.getSettings().deviceId } } : true)[0] || true : true
             });
 
-            // Получаем новый видео трек
             const newVideoTrack = newStream.getVideoTracks()[0];
 
-            // Останавливаем и удаляем старый видео трек из локального потока
             const oldVideoTracks = this.localStream.getVideoTracks();
             oldVideoTracks.forEach(track => {
                 this.localStream.removeTrack(track);
                 track.stop();
             });
 
-            // Добавляем новый видео трек в локальный поток
             this.localStream.addTrack(newVideoTrack);
-            newVideoTrack.enabled = this.videoEnabled; // Сохраняем состояние включения/выключения
+            newVideoTrack.enabled = this.videoEnabled; 
 
-            // Обновляем peer connections с новым видео треком
             this.peers.forEach(pc => {
                 const sender = pc.getSenders().find(s => s.track && s.track.kind === 'video');
                 if (sender) {
@@ -575,25 +543,21 @@ updateCameraSwitchButtonVisibility() {
                 }
             });
 
-            // Обновляем локальное видео
             const localVideo = document.querySelector('#video-local .video-element');
             if (localVideo) {
                 localVideo.srcObject = this.localStream;
             }
 
-            // Обновляем текущий режим камеры
             this.currentFacingMode = newFacingMode;
 
             console.log(`Камера переключена на: ${newFacingMode}`);
 
         } catch (error) {
             console.error('Ошибка переключения камеры:', error);
-            // Попробуем альтернативный способ с deviceId, если facingMode не сработал
             this.switchCameraByDeviceId();
         }
     }
 
-    // Альтернативный метод переключения по deviceId (если facingMode не работает)
     async switchCameraByDeviceId() {
          if (this.videoDevices.length < 2) {
              console.warn("Недостаточно камер для переключения по deviceId.");
@@ -601,7 +565,6 @@ updateCameraSwitchButtonVisibility() {
          }
 
          try {
-             // Найдем камеры с метками "front" и "back"
              let frontCamera = null;
              let backCamera = null;
              this.videoDevices.forEach((device, index) => {
@@ -613,30 +576,22 @@ updateCameraSwitchButtonVisibility() {
                  }
              });
 
-             // Если не нашли по меткам, предположим порядок (часто 0 - задняя, 1 - фронтальная, но не всегда)
-             // Лучше полагаться на facingMode, но если он не помог...
              if (!frontCamera && this.videoDevices.length > 1) {
-                 // Простая эвристика: первая камера часто задняя, вторая - фронтальная
-                 // Это не всегда верно, но лучше, чем ничего
                  backCamera = backCamera || { device: this.videoDevices[0], index: 0 };
                  frontCamera = frontCamera || { device: this.videoDevices[1], index: 1 };
              } else if (!frontCamera && this.videoDevices.length === 1) {
-                 // Только одна камера
                  console.warn("Обнаружена только одна камера.");
                  return;
              }
 
-             // Определяем, какую камеру включить
              let targetDevice = null;
              if (this.currentFacingMode === 'user' && backCamera) {
                   targetDevice = backCamera.device;
              } else if (this.currentFacingMode !== 'user' && frontCamera) {
                   targetDevice = frontCamera.device;
              } else if (this.currentFacingMode === 'user' && !backCamera && this.videoDevices.length > 1) {
-                  // Если хотим переключиться на заднюю, но не нашли, пробуем другую
                   targetDevice = this.videoDevices.find((d, i) => i !== (frontCamera ? frontCamera.index : -1));
              } else if (this.currentFacingMode !== 'user' && !frontCamera && this.videoDevices.length > 1) {
-                  // Если хотим переключиться на фронтальную, но не нашли, пробуем другую
                   targetDevice = this.videoDevices.find((d, i) => i !== (backCamera ? backCamera.index : -1));
              }
 
@@ -645,13 +600,11 @@ updateCameraSwitchButtonVisibility() {
                   return;
              }
 
-             // Получаем новый поток
               const newStream = await navigator.mediaDevices.getUserMedia({
                   video: { deviceId: { exact: targetDevice.deviceId } },
                   audio: this.localStream ? this.localStream.getAudioTracks().map(track => track.getSettings().deviceId ? { deviceId: { exact: track.getSettings().deviceId } } : true)[0] || true : true
               });
 
-              // Заменяем видео трек (как в предыдущей версии)
               const newVideoTrack = newStream.getVideoTracks()[0];
               const oldVideoTracks = this.localStream.getVideoTracks();
               oldVideoTracks.forEach(track => {
@@ -673,8 +626,6 @@ updateCameraSwitchButtonVisibility() {
                   localVideo.srcObject = this.localStream;
               }
 
-              // Обновляем currentFacingMode на основе выбранной камеры (приблизительно)
-              // Это не идеально, но лучшего способа без facingMode у конкретного deviceId нет
               if (targetDevice === (frontCamera ? frontCamera.device : null) || targetDevice.label.toLowerCase().includes('front') || targetDevice.label.toLowerCase().includes('фронт')) {
                   this.currentFacingMode = 'user';
               } else {
@@ -690,21 +641,17 @@ updateCameraSwitchButtonVisibility() {
     }
  async initializeMedia() {
         try {
-            // Получаем список устройств для определения facingMode
-            await this.getDevices(); // Убедимся, что список устройств обновлён
+            await this.getDevices(); 
             let constraints = { video: true, audio: true };
 
-            // Если на мобильном устройстве, используем facingMode
             if (this.isMobile) {
-                // Начинаем с фронтальной камеры
                 constraints = {
-                    video: { facingMode: this.currentFacingMode }, // Используем this.currentFacingMode
+                    video: { facingMode: this.currentFacingMode }, 
                     audio: true
                 };
             }
 
             this.localStream = await navigator.mediaDevices.getUserMedia(constraints);
-            // Изначально отключаем видео и аудио
             this.localStream.getVideoTracks().forEach(track => track.enabled = false);
             this.localStream.getAudioTracks().forEach(track => track.enabled = false);
             this.addVideoToGrid('local', this.localStream, this.username, false, false);
@@ -720,26 +667,18 @@ updateCameraSwitchButtonVisibility() {
                 });
             }
             async handleUsersInRoom(users) {
-                // Этот обработчик вызывается только для нового пользователя.
-                // Он получает список уже существующих пользователей.
-                // Новый пользователь должен инициировать соединения с ними.
                 for (const user of users) {
-                    if (user.id !== this.socket.id) { // Не создаем соединение с самим собой
-                        // Проверяем, существует ли уже соединение (например, если user-joined пришло быстрее)
+                    if (user.id !== this.socket.id) {
                         if (!this.peers.has(user.id)) {
-                             await this.createPeerConnection(user.id, user.username, true); // isInitiator = true
+                             await this.createPeerConnection(user.id, user.username, true); 
                         }
                     }
                 }
             }
             async handleUserJoined(user) {
-                 // Этот обработчик вызывается у уже существующих пользователей,
-                 // когда к комнате присоединяется новый пользователь.
-                 // Существующие пользователи должны инициировать соединение с новым.
-                 if (user.id !== this.socket.id) { // На всякий случай проверяем
-                     // Проверяем, существует ли уже соединение
+                 if (user.id !== this.socket.id) { 
                      if (!this.peers.has(user.id)) {
-                         await this.createPeerConnection(user.id, user.username, false); // isInitiator = false
+                         await this.createPeerConnection(user.id, user.username, false); 
                      }
                  }
             }
@@ -775,38 +714,30 @@ updateCameraSwitchButtonVisibility() {
                 }
             }
             async createPeerConnection(userId, username, isInitiator) {
-                // Проверка, если соединение уже существует, чтобы избежать дубликатов
                 if (this.peers.has(userId)) {
                     console.warn(`PeerConnection с пользователем ${userId} уже существует.`);
-                    return; // Или можно закрыть старое и создать новое, зависит от логики
-                    // this.peers.get(userId).close();
-                    // this.peers.delete(userId);
+                    return; 
                 }
                 console.log(`Создание PeerConnection с ${userId}. Инициатор: ${isInitiator}`);
                 const peerConnection = new RTCPeerConnection(this.iceConfiguration);
                 this.peers.set(userId, peerConnection);
-                // Добавляем локальный поток ТОЛЬКО если он есть
                 if (this.localStream) {
                     this.localStream.getTracks().forEach(track => {
                         peerConnection.addTrack(track, this.localStream);
                     });
                 }
-                // Обработка входящих потоков
                 peerConnection.ontrack = (event) => {
                     console.log(`Получен медиапоток от ${userId}`);
                     const remoteStream = event.streams[0];
-                    // Убедимся, что видео-элемент для этого пользователя еще не создан
                     if (!document.getElementById(`video-${userId}`)) {
                          this.addVideoToGrid(userId, remoteStream, username, false, false);
                     } else {
-                         // Если элемент уже есть, обновляем srcObject
                          const videoElement = document.querySelector(`#video-${userId} .video-element`);
                          if (videoElement && videoElement.srcObject !== remoteStream) {
                               videoElement.srcObject = remoteStream;
                          }
                     }
                 };
-                // Обработка ICE кандидатов
                 peerConnection.onicecandidate = (event) => {
                     if (event.candidate) {
                         this.socket.emit('ice-candidate', {
@@ -815,16 +746,12 @@ updateCameraSwitchButtonVisibility() {
                         });
                     }
                 };
-                // Обработка закрытия соединения
                 peerConnection.onconnectionstatechange = () => {
                     console.log(`Состояние соединения с ${userId}: ${peerConnection.connectionState}`);
                     if (peerConnection.connectionState === 'disconnected' || peerConnection.connectionState === 'failed') {
-                        // Можно добавить логику повторного подключения или уведомления
                         console.warn(`Соединение с пользователем ${userId} потеряно (${peerConnection.connectionState})`);
-                        // this.handleUserLeft(userId); // Или другая логика
                     }
                 };
-                // Если мы инициаторы, создаем оффер
                 if (isInitiator) {
                     try {
                         console.log(`Создание Offer для ${userId}`);
@@ -836,7 +763,6 @@ updateCameraSwitchButtonVisibility() {
                         });
                     } catch (error) {
                         console.error(`Ошибка при создании Offer для ${userId}:`, error);
-                        // Обработка ошибки, возможно, закрытие соединения
                         peerConnection.close();
                         this.peers.delete(userId);
                     }
@@ -876,7 +802,7 @@ updateCameraSwitchButtonVisibility() {
                 video.srcObject = stream;
                 video.autoplay = true;
                 video.playsInline = true;
-                video.muted = userId === 'local'; // Отключаем звук для локального видео
+                video.muted = userId === 'local'; 
                 video.style.display = videoEnabled ? 'block' : 'none';
                 const placeholder = document.createElement('div');
                 placeholder.className = 'video-placeholder';
@@ -908,7 +834,6 @@ updateCameraSwitchButtonVisibility() {
                 }
                 const btn = document.getElementById('toggleVideo');
                 btn.classList.toggle('disabled', !this.videoEnabled);
-                // Обновляем локальное видео
                 const localVideo = document.getElementById('video-local');
                 if (localVideo) {
                     const placeholder = localVideo.querySelector('.video-placeholder');
@@ -932,7 +857,6 @@ updateCameraSwitchButtonVisibility() {
                 }
                 const btn = document.getElementById('toggleAudio');
                 btn.classList.toggle('disabled', !this.audioEnabled);
-                // Обновляем индикатор звука
                 const localVideo = document.getElementById('video-local');
                 if (localVideo) {
                     const audioIndicator = localVideo.querySelector('.audio-indicator');
@@ -951,7 +875,6 @@ updateCameraSwitchButtonVisibility() {
                         video: { deviceId: { exact: deviceId } },
                         audio: this.localStream ? { deviceId: this.localStream.getAudioTracks()[0]?.getSettings()?.deviceId } : true
                     });
-                    // Заменяем видео трек
                     const videoTrack = newStream.getVideoTracks()[0];
                     const oldVideoTrack = this.localStream.getVideoTracks()[0];
                     if (oldVideoTrack) {
@@ -960,14 +883,12 @@ updateCameraSwitchButtonVisibility() {
                     }
                     this.localStream.addTrack(videoTrack);
                     videoTrack.enabled = this.videoEnabled;
-                    // Обновляем peer connections
                     this.peers.forEach(pc => {
                         const sender = pc.getSenders().find(s => s.track && s.track.kind === 'video');
                         if (sender) {
                             sender.replaceTrack(videoTrack);
                         }
                     });
-                    // Обновляем локальное видео
                     const localVideo = document.querySelector('#video-local .video-element');
                     if (localVideo) {
                         localVideo.srcObject = this.localStream;
@@ -983,7 +904,6 @@ updateCameraSwitchButtonVisibility() {
                         video: this.localStream ? { deviceId: this.localStream.getVideoTracks()[0]?.getSettings()?.deviceId } : true,
                         audio: { deviceId: { exact: deviceId } }
                     });
-                    // Заменяем аудио трек
                     const audioTrack = newStream.getAudioTracks()[0];
                     const oldAudioTrack = this.localStream.getAudioTracks()[0];
                     if (oldAudioTrack) {
@@ -992,7 +912,6 @@ updateCameraSwitchButtonVisibility() {
                     }
                     this.localStream.addTrack(audioTrack);
                     audioTrack.enabled = this.audioEnabled;
-                    // Обновляем peer connections
                     this.peers.forEach(pc => {
                         const sender = pc.getSenders().find(s => s.track && s.track.kind === 'audio');
                         if (sender) {
@@ -1005,25 +924,16 @@ updateCameraSwitchButtonVisibility() {
             }
             leaveRoom() {
                 if (confirm('Вы действительно хотите покинуть комнату?')) {
-                    // Останавливаем локальный поток
                     if (this.localStream) {
                         this.localStream.getTracks().forEach(track => track.stop());
                     }
-                    // Закрываем все peer connections
                     this.peers.forEach(pc => pc.close());
                     this.peers.clear();
-                    // Отключаемся от сокета
                     this.socket.disconnect();
-                    // Переходим на главную страницу
                     window.location.href = '/';
                 }
             }
-            // toggleChat() { // Функция скрыта
-            //     const chatPanel = document.getElementById('chatPanel');
-            //     chatPanel.classList.toggle('hidden');
-            //     const toggleBtn = document.getElementById('toggleChat');
-            //     toggleBtn.textContent = chatPanel.classList.contains('hidden') ? '💬 Чат' : '❌ Закрыть';
-            // }
+
             sendMessage() {
                 const input = document.getElementById('messageInput');
                 const message = input.value.trim();
@@ -1072,14 +982,11 @@ updateCameraSwitchButtonVisibility() {
                 return div.innerHTML;
             }
         }
-        // Функция для скрытия настроек
         function hideSettings() {
             document.getElementById('deviceSelector').style.display = 'none';
         }
-        // Запуск приложения
         let app;
         window.addEventListener('load', () => {
-            // Проверяем, есть ли имя пользователя
             if (!localStorage.getItem('username')) {
                 alert('Пожалуйста, вернитесь на главную страницу и введите ваше имя');
                 window.location.href = '/';
@@ -1087,7 +994,6 @@ updateCameraSwitchButtonVisibility() {
             }
             app = new VideoCallApp();
         });
-        // Обработка закрытия страницы
         window.addEventListener('beforeunload', () => {
             if (app && app.localStream) {
                 app.localStream.getTracks().forEach(track => track.stop());

@@ -12,8 +12,8 @@
         }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #353839; /* Основной цвет фона */
-            color: #353839; /* Цвет текста по умолчанию */
+            background-color: #353839; 
+            color: #353839;
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -21,7 +21,7 @@
             padding: 20px;
         }
         .container {
-            background: #f5f5f5; /* Светлый фон для контента */
+            background: #f5f5f5; 
             border-radius: 24px;
             padding: 40px;
             box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
@@ -32,7 +32,6 @@
             overflow: hidden;
             border: 1px solid #ddd;
         }
-        /* Акцентная полоса вверху */
         .container::before {
              content: '';
              position: absolute;
@@ -40,7 +39,7 @@
              left: 0;
              right: 0;
              height: 8px;
-             background: linear-gradient(90deg, #FFE4B5, #d4b98a); /* Акцентный цвет в градиенте */
+             background: linear-gradient(90deg, #FFE4B5, #d4b98a);
         }
         .logo-area {
             text-align: center;
@@ -48,7 +47,7 @@
         }
         .logo {
             font-size: 48px;
-            color: #353839; /* Цвет логотипа */
+            color: #353839;
         }
         h1 {
             text-align: center;
@@ -84,7 +83,7 @@
         }
         input[type="text"]:focus {
             outline: none;
-            border-color: #FFE4B5; /* Акцент на фокусе */
+            border-color: #FFE4B5; 
             box-shadow: 0 0 0 3px rgba(255, 228, 181, 0.3);
         }
         .btn {
@@ -100,15 +99,15 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px; /* Пространство между иконкой и текстом */
+            gap: 8px;
         }
         .btn-primary {
-            background: #353839; /* Основной цвет кнопки */
-            color: #FFE4B5; /* Акцентный цвет текста */
+            background: #353839; 
+            color: #FFE4B5; 
             box-shadow: 0 4px 10px rgba(53, 56, 57, 0.2);
         }
         .btn-primary:hover {
-            background: #2a2d2e; /* Немного темнее при наведении */
+            background: #2a2d2e; 
             transform: translateY(-3px);
             box-shadow: 0 7px 15px rgba(53, 56, 57, 0.3);
         }
@@ -116,7 +115,7 @@
              transform: translateY(0);
         }
         .btn-secondary {
-            background: #e0e0e0; /* Светлый фон */
+            background: #e0e0e0; 
             color: #353839;
             border: 2px solid #ccc;
         }
@@ -201,7 +200,6 @@
 </head>
 <body>
     <div class="container">
-        <!-- Логотип в верхней части -->
         <div class="logo-area">
                     <h1>LevTalking</h1>
             <div class="logo"><img src="assets/435519ca-586f-4205-80ce-da05913bca03.png" style="width: 200px; height: 200px;"></div>
@@ -227,7 +225,6 @@
         const roomIdInput = document.getElementById('roomId');
         const joinRoomBtn = document.getElementById('joinRoom');
         const errorDiv = document.getElementById('error');
-        // Генерируем случайное имя пользователя
         const randomNames = ['Пользователь', 'Гость', 'Участник'];
         const randomName = randomNames[Math.floor(Math.random() * randomNames.length)] + Math.floor(Math.random() * 1000);
         usernameInput.value = randomName;
@@ -250,7 +247,6 @@
             }
             return true;
         }
-        // Создание новой комнаты
         createRoomBtn.addEventListener('click', () => {
             if (!validateUsername()) return;
             createRoomBtn.disabled = true;
@@ -261,7 +257,6 @@
                 window.location.href = `/room/${roomId}`;
             });
         });
-        // Подключение к существующей комнате
         joinRoomBtn.addEventListener('click', () => {
             if (!validateUsername()) return;
             const roomId = roomIdInput.value.trim();
@@ -273,7 +268,6 @@
             localStorage.setItem('username', username);
             window.location.href = `/room/${roomId}`;
         });
-        // Подключение к комнате по Enter
         roomIdInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 joinRoomBtn.click();
@@ -284,13 +278,11 @@
                 createRoomBtn.click();
             }
         });
-        // Обработка ошибок сокета
         socket.on('error', (message) => {
             showError(message);
             createRoomBtn.disabled = false;
             createRoomBtn.textContent = '+ Создать новую комнату';
         });
-        // Восстанавливаем имя пользователя из localStorage
         const savedUsername = localStorage.getItem('username');
         if (savedUsername) {
             usernameInput.value = savedUsername;
