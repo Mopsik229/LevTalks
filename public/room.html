@@ -186,28 +186,29 @@
         }
 
         .video-container.fullscreen {
-            position: fixed;
+            position: absolute;
             top: 0;
             left: 0;
-            width: 100vw !important;
-            height: 100vh !important;
-            z-index: 1000;
+            width: calc(100% - 320px) !important;
+            height: 100% !important;
+            z-index: 10;
             border-radius: 0;
             margin: 0;
             background: #000;
         }
 
         .video-container.fullscreen::after {
-            content: 'Нажмите для выхода из полноэкранного режима';
+            content: "Нажмите для выхода";
             position: absolute;
             bottom: 20px;
             left: 50%;
             transform: translateX(-50%);
             background: rgba(0,0,0,0.7);
             color: white;
-            padding: 10px 15px;
-            border-radius: 8px;
+            padding: 8px 12px;
+            border-radius: 6px;
             font-size: 14px;
+            pointer-events: none;
         }
         
         .chat-panel {
@@ -312,8 +313,17 @@
         }
 
         @media (max-width: 1024px) {
+            .video-container.fullscreen {
+                width: 100% !important;
+                height: 65% !important;
+                top: 0;
+                left: 0;
+            }
             .chat-panel {
-                width: 280px;
+                position: absolute;
+                bottom: 0;
+                height: 35% !important;
+                z-index: 5;
             }
             .control-btn {
                 width: 45px;
@@ -554,6 +564,25 @@
         option.text = device.label || `Устройство ${device.deviceId.substr(0, 8)}`;
         selectElement.appendChild(option);
     });
+}
+
+toggleFullscreenScreen(container) {
+    const isFullscreen = container.classList.contains('fullscreen');
+    const allContainers = document.querySelectorAll('.video-container');
+
+    if (isFullscreen) {
+        container.classList.remove('fullscreen');
+        allContainers.forEach(el => el.style.display = '');
+    } else {
+        allContainers.forEach(el => {
+            if (el.dataset.type === 'screen' && el !== container) {
+                el.style.display = 'none';
+            } else if (el !== container) {
+                el.style.display = 'none';
+            }
+        });
+        container.classList.add('fullscreen');
+    }
 }
 
 handleUserScreenShareToggle(data) {
@@ -865,14 +894,14 @@ addVideoToGrid(userId, stream, username, videoEnabled, audioEnabled, isScreen = 
     videoContainer.className = 'video-container';
     videoContainer.id = `video-${userId}`;
     if (isScreen) videoContainer.dataset.type = 'screen';
+    videoContainer.dataset.userId = userId;
 
     const video = document.createElement('video');
     video.className = 'video-element';
     video.srcObject = stream;
     video.autoplay = true;
     video.playsInline = true;
-    video.muted = true;
-    video.style.display = 'block';
+    video.muted = userId === 'local'; // Не мутим чужие потоки
 
     const placeholder = document.createElement('div');
     placeholder.className = 'video-placeholder';
@@ -881,10 +910,13 @@ addVideoToGrid(userId, stream, username, videoEnabled, audioEnabled, isScreen = 
 
     const userInfo = document.createElement('div');
     userInfo.className = 'user-info';
+    const fullscreenBtn = isScreen 
+        ? '<span class="fullscreen-btn" style="cursor:pointer; margin-left:5px;">↗</span>' 
+        : '';
     userInfo.innerHTML = `
         <div class="audio-indicator ${audioEnabled ? 'unmuted' : ''}"></div>
         <span>${username}</span>
-        ${isScreen ? '<span class="fullscreen-btn" style="cursor:pointer; margin-left:5px;">↗</span>' : ''}
+        ${fullscreenBtn}
     `;
 
     videoContainer.appendChild(video);
@@ -892,20 +924,16 @@ addVideoToGrid(userId, stream, username, videoEnabled, audioEnabled, isScreen = 
     videoContainer.appendChild(userInfo);
     videoGrid.appendChild(videoContainer);
 
+    // Добавляем обработчик разворачивания для экранов
     if (isScreen) {
-        userInfo.querySelector('.fullscreen-btn').addEventListener('click', (e) => {
+        const btn = userInfo.querySelector('.fullscreen-btn');
+        btn.addEventListener('click', (e) => {
             e.stopPropagation();
-            if (videoContainer.classList.contains('fullscreen')) {
-                videoContainer.classList.remove('fullscreen');
-            } else {
-                videoContainer.classList.add('fullscreen');
-            }
+            this.toggleFullscreenScreen(videoContainer);
         });
-
+        // Клик по контейнеру тоже разворачивает
         videoContainer.addEventListener('click', () => {
-            if (videoContainer.classList.contains('fullscreen')) {
-                videoContainer.classList.remove('fullscreen');
-            }
+            this.toggleFullscreenScreen(videoContainer);
         });
     }
 }
