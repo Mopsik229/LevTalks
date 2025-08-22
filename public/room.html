@@ -184,6 +184,32 @@
         .control-btn:hover {
             transform: scale(1.1);
         }
+
+        .video-container.fullscreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw !important;
+            height: 100vh !important;
+            z-index: 1000;
+            border-radius: 0;
+            margin: 0;
+            background: #000;
+        }
+
+        .video-container.fullscreen::after {
+            content: 'Нажмите для выхода из полноэкранного режима';
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
         .chat-panel {
             width: 320px;
             background: #2a2a2a;
@@ -403,6 +429,9 @@
         <button class="control-btn audio" id="toggleAudio" title="Микрофон">
             🎤
         </button>
+        <button class="control-btn screen-share" id="toggleScreenShare" title="Поделиться экраном" style="display: none;">
+            🖥️
+        </button>
         <button class="control-btn camera-switch" id="switchCamera" title="Переключить камеру">
             🔄
         </button>
@@ -445,6 +474,8 @@
                 this.currentVideoDeviceIndex = 0;
                 this.isMobile = this.checkIsMobile(); 
                 this.currentFacingMode = 'user'; 
+                this.screenShareEnabled = false;
+                this.originalStream = null;
 
                 this.iceConfiguration = {
                     iceServers: [
@@ -479,6 +510,10 @@
                 document.getElementById('copyRoomLink').addEventListener('click', () => this.copyRoomLink());
                 document.getElementById('videoDevices').addEventListener('change', (e) => this.changeVideoDevice(e.target.value));
                 document.getElementById('audioDevices').addEventListener('change', (e) => this.changeAudioDevice(e.target.value));
+                document.getElementById('toggleScreenShare').addEventListener('click', () => this.toggleScreenShare());
+                    if (!this.isMobile) {
+                        document.getElementById('toggleScreenShare').style.display = 'flex';
+                    }
                 this.socket.on('users-in-room', (users) => this.handleUsersInRoom(users));
                 this.socket.on('user-joined', (user) => this.handleUserJoined(user));
                 this.socket.on('user-left', (userId) => this.handleUserLeft(userId));
@@ -489,6 +524,7 @@
                 this.socket.on('ice-candidate', (data) => this.handleIceCandidate(data));
                 this.socket.on('new-message', (message) => this.addMessageToChat(message));
                 this.socket.on('chat-history', (messages) => this.loadChatHistory(messages));
+                this.socket.on('user-screen-share-toggle', (data) => this.handleUserScreenShareToggle(data));
             }
             async getDevices() {
                 try {
@@ -518,6 +554,21 @@
         option.text = device.label || `Устройство ${device.deviceId.substr(0, 8)}`;
         selectElement.appendChild(option);
     });
+}
+
+handleUserScreenShareToggle(data) {
+    const { userId, enabled } = data;
+
+    if (enabled) {
+        if (!document.getElementById(`video-${userId}-screen`)) {
+            const placeholder = document.querySelector(`#video-${userId} .video-placeholder`);
+            if (placeholder) placeholder.textContent = '🖥️';
+
+        }
+    } else {
+        const screenEl = document.getElementById(`video-${userId}-screen`);
+        if (screenEl) screenEl.remove();
+    }
 }
 updateCameraSwitchButtonVisibility() {
          const switchCameraBtn = document.getElementById('switchCamera');
@@ -808,33 +859,56 @@ updateCameraSwitchButtonVisibility() {
                     await peerConnection.addIceCandidate(data.candidate);
                 }
             }
-            addVideoToGrid(userId, stream, username, videoEnabled, audioEnabled) {
-                const videoGrid = document.getElementById('videoGrid');
-                const videoContainer = document.createElement('div');
-                videoContainer.className = 'video-container';
-                videoContainer.id = `video-${userId}`;
-                const video = document.createElement('video');
-                video.className = 'video-element';
-                video.srcObject = stream;
-                video.autoplay = true;
-                video.playsInline = true;
-                video.muted = userId === 'local'; 
-                video.style.display = videoEnabled ? 'block' : 'none';
-                const placeholder = document.createElement('div');
-                placeholder.className = 'video-placeholder';
-                placeholder.style.display = videoEnabled ? 'none' : 'flex';
-                placeholder.textContent = username.charAt(0).toUpperCase();
-                const userInfo = document.createElement('div');
-                userInfo.className = 'user-info';
-                userInfo.innerHTML = `
-                    <div class="audio-indicator ${audioEnabled ? 'unmuted' : ''}"></div>
-                    <span>${username}</span>
-                `;
-                videoContainer.appendChild(video);
-                videoContainer.appendChild(placeholder);
-                videoContainer.appendChild(userInfo);
-                videoGrid.appendChild(videoContainer);
+addVideoToGrid(userId, stream, username, videoEnabled, audioEnabled, isScreen = false) {
+    const videoGrid = document.getElementById('videoGrid');
+    const videoContainer = document.createElement('div');
+    videoContainer.className = 'video-container';
+    videoContainer.id = `video-${userId}`;
+    if (isScreen) videoContainer.dataset.type = 'screen';
+
+    const video = document.createElement('video');
+    video.className = 'video-element';
+    video.srcObject = stream;
+    video.autoplay = true;
+    video.playsInline = true;
+    video.muted = true;
+    video.style.display = 'block';
+
+    const placeholder = document.createElement('div');
+    placeholder.className = 'video-placeholder';
+    placeholder.style.display = 'none';
+    placeholder.textContent = isScreen ? '🖥️' : username.charAt(0).toUpperCase();
+
+    const userInfo = document.createElement('div');
+    userInfo.className = 'user-info';
+    userInfo.innerHTML = `
+        <div class="audio-indicator ${audioEnabled ? 'unmuted' : ''}"></div>
+        <span>${username}</span>
+        ${isScreen ? '<span class="fullscreen-btn" style="cursor:pointer; margin-left:5px;">↗</span>' : ''}
+    `;
+
+    videoContainer.appendChild(video);
+    videoContainer.appendChild(placeholder);
+    videoContainer.appendChild(userInfo);
+    videoGrid.appendChild(videoContainer);
+
+    if (isScreen) {
+        userInfo.querySelector('.fullscreen-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (videoContainer.classList.contains('fullscreen')) {
+                videoContainer.classList.remove('fullscreen');
+            } else {
+                videoContainer.classList.add('fullscreen');
             }
+        });
+
+        videoContainer.addEventListener('click', () => {
+            if (videoContainer.classList.contains('fullscreen')) {
+                videoContainer.classList.remove('fullscreen');
+            }
+        });
+    }
+}
             removeVideoFromGrid(userId) {
                 const videoContainer = document.getElementById(`video-${userId}`);
                 if (videoContainer) {
@@ -938,6 +1012,88 @@ updateCameraSwitchButtonVisibility() {
                     console.error('Ошибка смены микрофона:', error);
                 }
             }
+
+            async toggleScreenShare() {
+    if (this.screenShareEnabled) {
+        try {
+            if (this.localStream) {
+                const newStream = await navigator.mediaDevices.getUserMedia({
+                    video: true,
+                    audio: this.localStream.getAudioTracks().map(t => t.enabled).some(e => e) 
+                });
+
+                const videoTrack = newStream.getVideoTracks()[0];
+                const oldTrack = this.localStream.getVideoTracks()[0];
+
+                this.peers.forEach(pc => {
+                    const sender = pc.getSenders().find(s => s.track && s.track.kind === 'video' && !s.track.label.includes('screen'));
+                    if (sender) {
+                        sender.replaceTrack(videoTrack);
+                    }
+                });
+
+                this.localStream.removeTrack(oldTrack);
+                oldTrack.stop();
+                this.localStream.addTrack(videoTrack);
+                videoTrack.enabled = this.videoEnabled;
+
+                const localVideo = document.querySelector('#video-local .video-element');
+                if (localVideo) localVideo.srcObject = this.localStream;
+
+                this.removeVideoFromGrid('screen-local');
+                this.screenShareEnabled = false;
+                this.socket.emit('toggle-screen-share', false);
+
+                this.addVideoToGrid('local', this.localStream, this.username, this.videoEnabled, this.audioEnabled);
+            }
+        } catch (err) {
+            console.error('Ошибка при возврате к камере:', err);
+        }
+    } else {
+        try {
+            const screenStream = await navigator.mediaDevices.getDisplayMedia({
+                video: {
+                    cursor: 'always',
+                    width: { ideal: 1920, max: 3840 },
+                    height: { ideal: 1080, max: 2160 },
+                    frameRate: { ideal: 30, max: 60 }
+                },
+                audio: false 
+            });
+
+            const screenTrack = screenStream.getVideoTracks()[0];
+
+            this.originalStream = new MediaStream(this.localStream.getVideoTracks());
+
+            const oldTrack = this.localStream.getVideoTracks()[0];
+            this.localStream.removeTrack(oldTrack);
+            this.localStream.addTrack(screenTrack);
+
+            this.peers.forEach(pc => {
+                const sender = pc.getSenders().find(s => s.track && s.track.kind === 'video');
+                if (sender) {
+                    sender.replaceTrack(screenTrack);
+                }
+            });
+
+            const localVideo = document.querySelector('#video-local .video-element');
+            if (localVideo) localVideo.srcObject = this.localStream;
+
+            this.removeVideoFromGrid('local');
+            this.addVideoToGrid('screen-local', this.localStream, this.username, true, false, true);
+
+            this.screenShareEnabled = true;
+            this.socket.emit('toggle-screen-share', true);
+
+            screenTrack.onended = () => {
+                this.toggleScreenShare(); 
+            };
+        } catch (err) {
+            console.error('Ошибка при демонстрации экрана:', err);
+            alert('Не удалось начать демонстрацию экрана.');
+        }
+    }
+}
             leaveRoom() {
                 if (confirm('Вы действительно хотите покинуть комнату?')) {
                     if (this.localStream) {

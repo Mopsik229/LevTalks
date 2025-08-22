@@ -54,7 +54,8 @@ io.on('connection', (socket) => {
       id: socket.id,
       username: username,
       videoEnabled: false,
-      audioEnabled: false
+      audioEnabled: false,
+      screenShare: false
     });
 
     socket.join(roomId);
@@ -124,6 +125,20 @@ io.on('connection', (socket) => {
       }
     }
   });
+
+  socket.on('toggle-screen-share', (enabled) => {
+  if (socket.roomId && rooms.has(socket.roomId)) {
+    const room = rooms.get(socket.roomId);
+    const user = room.users.get(socket.id);
+    if (user) {
+      user.screenShare = enabled;
+      socket.to(socket.roomId).emit('user-screen-share-toggle', {
+        userId: socket.id,
+        enabled: enabled
+      });
+    }
+  }
+});
 
   socket.on('send-message', (message) => {
     if (socket.roomId && rooms.has(socket.roomId)) {
